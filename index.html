@@ -1,0 +1,2985 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="vVAIsziXOhpsKumUOIEnhK">
+<head data-page-node-id="mBBu0Drkzihmv8omdRntjm">
+<meta charset="UTF-8" data-page-node-id="LP66WEG8YosHtF7licZaGr">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="SMI07lnPjaE3zUFiwjFz62">
+<title>海草床退化模拟：一座城市的选择</title>
+<style>
+  :root{
+    --panel-bg:#f7f4ec; --ink:#2b2a26; --line:#d8d2c2; --accent:#0e7a5f; --warn:#b03a2e;
+    --sea-deep:#07161d; --sea-mid:#0c2733; --sea-line:rgba(126,200,177,.22);
+    --glass:rgba(10,26,24,.86); --glass-hi:rgba(126,200,177,.14); --glass-bd:rgba(146,214,190,.24);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#050d10;color:#dce8e2;
+    display:flex;flex-direction:column;
+  }
+  button{transition:background .18s,color .18s,border-color .18s,transform .18s,box-shadow .18s;}
+  header{
+    background:linear-gradient(180deg,#0a2320 0%,#0e332d 60%,#0b2823 100%);
+    color:#e6f4ec;padding:9px 18px;
+    display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;
+    border-bottom:1px solid rgba(126,200,177,.28);
+    box-shadow:0 2px 18px rgba(0,0,0,.45);position:relative;z-index:12;
+  }
+  header h1{font-size:16px;font-weight:700;letter-spacing:2px;
+    background:linear-gradient(90deg,#bfe9d4,#7ecfa8,#bfe9d4);
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  header .sub{font-size:11px;opacity:.55;margin-left:10px;letter-spacing:1px;}
+  header button{
+    background:rgba(126,200,177,.08);border:1px solid rgba(126,200,177,.35);color:#cfe9dc;font-size:12px;
+    padding:4px 12px;border-radius:16px;cursor:pointer;margin-left:8px;letter-spacing:.5px;
+  }
+  header button:hover{background:rgba(126,200,177,.22);box-shadow:0 0 10px rgba(126,200,177,.25);}
+  main{flex:1 1 auto;display:flex;min-height:0;}
+  #stage{flex:1 1 auto;position:relative;min-width:0;overflow:hidden;}
+  #stage canvas{position:absolute;inset:0;width:100%;height:100%;display:none;}
+  #stage canvas.active{display:block;}
+  #cityCanvas{background:linear-gradient(180deg,#8fb8d8 0%,#87a6c4 100%);}
+  #seaCanvas{background:linear-gradient(180deg,#0e5468 0%,#0b3c50 100%);}
+  #viewToggle{
+    position:absolute;top:32px;right:10px;z-index:6;
+    background:var(--glass);color:#dff0e8;border:1px solid var(--glass-bd);
+    font-size:13px;padding:8px 18px;border-radius:20px;cursor:pointer;letter-spacing:1px;
+    backdrop-filter:blur(8px);box-shadow:0 3px 14px rgba(0,0,0,.45);
+  }
+  #viewToggle:hover{background:rgba(20,60,50,.95);box-shadow:0 0 16px rgba(126,200,177,.35);}
+  #viewLabelCity,#viewLabelSea{
+    position:absolute;left:10px;top:6px;font-size:11px;color:#eaf5ef;opacity:.85;
+    background:rgba(4,14,12,.5);padding:3px 10px;border-radius:12px;pointer-events:none;z-index:3;
+    backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.12);
+  }
+  #viewLabelSea{display:none;}
+  #warnBanner{
+    position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:5;
+    background:linear-gradient(90deg,rgba(140,34,26,.94),rgba(190,60,44,.94),rgba(140,34,26,.94));
+    color:#fff;font-size:12px;padding:6px 18px;border-radius:20px;
+    display:none;max-width:70%;text-align:center;
+    box-shadow:0 2px 16px rgba(200,60,40,.5),inset 0 0 12px rgba(255,120,90,.2);
+    border:1px solid rgba(255,160,130,.4);animation:bannerIn .4s ease;
+  }
+  @keyframes bannerIn{from{opacity:0;transform:translate(-50%,-12px);}to{opacity:1;transform:translate(-50%,0);}}
+  #newsToast{display:none;}
+  /* L1 角落小通知：不打断，8 秒自动消失 */
+  #notifyWrap{
+    position:absolute;bottom:56px;right:12px;z-index:8;width:250px;
+    display:flex;flex-direction:column;gap:8px;max-height:62%;overflow:hidden;
+  }
+  .nfCard{
+    background:var(--glass);backdrop-filter:blur(10px);
+    border:1px solid var(--glass-bd);border-left:3px solid #d8a038;border-radius:10px;padding:10px 12px;
+    font-size:12px;color:#d8e6de;box-shadow:0 6px 20px rgba(0,0,0,.5);
+    line-height:1.55;animation:nfIn .35s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes nfIn{from{opacity:0;transform:translateX(40px) scale(.95);}to{opacity:1;transform:none;}}
+  .nfCard .nf-src{font-weight:700;color:#ffd76a;font-size:11px;margin-bottom:3px;letter-spacing:.5px;}
+  .nfCard .nf-btns{display:flex;gap:6px;margin-top:7px;}
+  .nfCard .nf-btns button{
+    flex:1;font-size:11px;padding:4px 0;border-radius:6px;cursor:pointer;
+    border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#cfe4da;
+  }
+  .nfCard .nf-btns button:hover{background:rgba(255,255,255,.16);}
+  .nfCard .nf-btns button.pri{background:linear-gradient(135deg,#12997a,#0e7a5f);border-color:rgba(126,200,177,.5);color:#fff;}
+  .nfCard .nf-btns button.pri:hover{background:linear-gradient(135deg,#17b58f,#12997a);box-shadow:0 0 10px rgba(126,200,177,.4);}
+  /* L2 侧边抽屉：事件完整背景（可选查看，不暂停） */
+  #drawer{
+    position:absolute;top:0;right:0;bottom:0;width:340px;max-width:100%;z-index:9;
+    background:linear-gradient(180deg,rgba(8,22,20,.97),rgba(11,30,27,.97));
+    border-left:3px solid #12997a;box-shadow:-8px 0 30px rgba(0,0,0,.55);
+    transform:translateX(105%);visibility:hidden;
+    transition:transform .3s ease,visibility 0s linear .3s;
+    padding:18px 18px 24px;overflow-y:auto;font-size:13px;line-height:1.8;color:#cfe2d8;
+  }
+  #drawer.show{transform:none;visibility:visible;transition:transform .3s ease;}
+  #drawer h3{font-size:15px;color:#8fd8b8;margin-bottom:4px;}
+  #drawer .dw-src{font-size:11px;color:#ffd76a;font-weight:700;margin-bottom:10px;}
+  #drawer .dw-body b{color:#ff9d8a;}
+  #drawer .dw-close{
+    position:absolute;top:12px;right:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);
+    border-radius:6px;font-size:12px;padding:3px 10px;cursor:pointer;color:#cfe2d8;
+  }
+  #drawer .dw-close:hover{background:rgba(255,255,255,.18);}
+  /* L0 趋势折线 */
+  .spark{display:block;width:100%;height:26px;margin:1px 0 5px;}
+  .spark polyline{fill:none;stroke-width:1.5;}
+  .spark .sp-line{stroke:#8fd8b8;}
+  .spark .sp-zero{stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:2,3;}
+  .trendArrow{font-size:10px;margin-left:4px;}
+  #infoCard{
+    position:absolute;z-index:7;width:270px;background:var(--glass);backdrop-filter:blur(10px);
+    border:1px solid var(--glass-bd);
+    border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.7;color:#d8e6de;
+    box-shadow:0 8px 26px rgba(0,0,0,.5);display:none;cursor:pointer;
+  }
+  #infoCard h3{font-size:13px;margin-bottom:6px;color:#8fd8b8;}
+  #infoCard .hr{border-top:1px dashed rgba(255,255,255,.2);margin:6px 0;}
+  #buildFab{
+    position:absolute;bottom:56px;left:12px;z-index:6;
+    background:linear-gradient(135deg,#17b58f 0%,#0e7a5f 100%);color:#fff;border:1px solid rgba(180,240,215,.35);
+    font-size:14px;font-weight:600;padding:11px 22px;border-radius:26px;
+    cursor:pointer;box-shadow:0 4px 16px rgba(14,122,95,.55),0 0 22px rgba(126,200,177,.25);
+    letter-spacing:1px;animation:fabPulse 2.6s ease-in-out infinite;
+  }
+  #buildFab:hover{background:linear-gradient(135deg,#1fd0a4,#12997a);transform:translateY(-2px);
+    box-shadow:0 8px 22px rgba(14,122,95,.65),0 0 30px rgba(126,200,177,.45);}
+  @keyframes fabPulse{0%,100%{box-shadow:0 4px 16px rgba(14,122,95,.55),0 0 14px rgba(126,200,177,.2);}
+    50%{box-shadow:0 4px 16px rgba(14,122,95,.55),0 0 28px rgba(126,200,177,.5);}}
+
+  /* 右侧数据面板：深色玻璃 */
+  #panel{
+    flex:0 0 240px;background:linear-gradient(180deg,rgba(7,20,18,.96),rgba(10,28,25,.96));
+    border-left:1px solid rgba(126,200,177,.3);
+    padding:12px;overflow-y:auto;font-size:12px;color:#d8e6de;
+    box-shadow:inset 6px 0 24px rgba(0,0,0,.35);backdrop-filter:blur(8px);
+  }
+  #panel h2{font-size:12px;margin:12px 0 6px;color:#8fd8b8;letter-spacing:1.5px;
+    border-bottom:1px solid rgba(126,200,177,.25);padding-bottom:4px;
+    display:flex;align-items:center;gap:5px;}
+  #panel h2::before{content:"";display:inline-block;width:3px;height:11px;border-radius:2px;
+    background:linear-gradient(180deg,#8fd8b8,#12997a);}
+  #panel h2:first-child{margin-top:0;}
+  #panel .row{display:flex;justify-content:space-between;margin:4px 0;line-height:1.5;}
+  #panel .row b{font-weight:600;}
+  .bar{height:7px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin:3px 0 6px;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.4);}
+  .bar i{display:block;height:100%;border-radius:4px;transition:width .4s;}
+  #barCover i{background:linear-gradient(90deg,#1a6e45,#57c878);box-shadow:0 0 8px rgba(87,200,120,.5);}
+  #barSat i{background:linear-gradient(90deg,#b07d1e,#ffd76a);box-shadow:0 0 8px rgba(255,200,80,.4);}
+  #panel .building{background:rgba(126,200,177,.09);border:1px solid rgba(126,200,177,.2);
+    border-radius:8px;padding:5px 8px;margin:4px 0;font-size:11px;}
+  #panel .building .bar{height:4px;margin-top:3px;background:rgba(0,0,0,.3);}
+  #panel .building .bar i{background:linear-gradient(90deg,#3a7fb5,#6fb6ff);}
+  .lvGood{color:#5fd898;font-weight:600;}
+  .lvMid{color:#ffd76a;font-weight:600;}
+  .lvBad{color:#ff8a76;font-weight:600;}
+
+  /* 底部时间线 */
+  footer #yearLabel,footer #tlWrap{display:none;}
+footer{
+    flex:0 0 58px;background:linear-gradient(180deg,#0a1a18 0%,#0d2a25 100%);color:#cfe0d8;display:flex;align-items:center;
+    gap:14px;padding:0 16px;border-top:1px solid rgba(126,200,177,.25);
+    box-shadow:0 -2px 18px rgba(0,0,0,.4);
+  }
+  #yearLabel{font-size:21px;font-weight:800;width:110px;color:#fff;
+    text-shadow:0 0 14px rgba(126,200,177,.55);letter-spacing:1px;}
+  #tlWrap{flex:1;position:relative;height:26px;}
+  #tlTrack{position:absolute;top:12px;left:0;right:0;height:5px;background:rgba(255,255,255,.12);border-radius:3px;}
+  #tlFill{position:absolute;top:12px;left:0;height:5px;border-radius:3px;width:0%;
+    background:linear-gradient(90deg,#12997a,#7ecfa8);box-shadow:0 0 10px rgba(126,200,177,.6);}
+  .tlNode{
+    position:absolute;top:8.5px;width:12px;height:12px;border-radius:50%;
+    background:#e0b34a;border:2px solid #0a1a18;transform:translateX(-6px);cursor:pointer;
+    box-shadow:0 0 6px rgba(224,179,74,.7);transition:transform .2s;
+  }
+  .tlNode:hover{transform:translateX(-6px) scale(1.35);}
+  .tlNode.hit{background:#e85b4b;box-shadow:0 0 8px rgba(232,91,75,.85);animation:nodeHit .8s ease;}
+  @keyframes nodeHit{0%{transform:translateX(-6px) scale(2.4);box-shadow:0 0 18px rgba(232,91,75,1);}
+    100%{transform:translateX(-6px) scale(1);}}
+  #tlCursor{
+    position:absolute;top:1px;width:3px;height:24px;border-radius:2px;transform:translateX(-1.5px);
+    background:linear-gradient(180deg,#fff,#7ecfa8);box-shadow:0 0 10px rgba(255,255,255,.8);
+  }
+  .ctrl{
+    background:rgba(126,200,177,.08);border:1px solid rgba(126,200,177,.3);color:#cfe4da;font-size:13px;
+    padding:6px 13px;border-radius:18px;cursor:pointer;white-space:nowrap;
+  }
+  .ctrl:hover{background:rgba(126,200,177,.2);box-shadow:0 0 10px rgba(126,200,177,.25);}
+  .ctrl.active{background:linear-gradient(135deg,#17b58f,#0e7a5f);color:#fff;border-color:rgba(180,240,215,.5);
+    font-weight:700;box-shadow:0 0 14px rgba(126,200,177,.45);}
+
+  /* 弹窗系统 */
+  #modalOverlay{
+    position:fixed;inset:0;background:rgba(4,10,9,.78);backdrop-filter:blur(3px);z-index:50;
+    display:none;align-items:center;justify-content:center;padding:24px;
+  }
+  #modalOverlay.show{display:flex;}
+  #modalBox{
+    background:linear-gradient(180deg,#f9f3e2 0%,#f1e8d0 100%);border-radius:14px;max-width:640px;width:100%;max-height:88vh;
+    overflow-y:auto;padding:26px 30px;
+    box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.35) inset;
+    border:1px solid #c9b98a;position:relative;animation:modalIn .35s cubic-bezier(.2,.9,.3,1.15);
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(26px) scale(.96);}to{opacity:1;transform:none;}}
+  #modalBox::before{ /* 老照片颗粒感 */
+    content:"";position:absolute;inset:0;border-radius:10px;pointer-events:none;
+    background-image:radial-gradient(rgba(120,90,40,.06) 1px,transparent 1px);
+    background-size:4px 4px;
+  }
+  .m-tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:2px;color:#8a3b2b;
+    border:1px solid #c0553f;padding:2px 10px;border-radius:3px;margin-bottom:12px;}
+  .m-title{font-size:19px;font-weight:700;color:#3a2f1d;margin-bottom:14px;line-height:1.4;}
+  .m-body{font-size:14px;line-height:1.9;color:#3d382c;min-height:60px;}
+  .m-body p{margin:6px 0;}
+  .m-hr{border-top:1px dashed #b7a877;margin:12px 0;}
+  .m-case{background:#efe5c8;border-left:4px solid #8a6d1f;padding:10px 14px;border-radius:4px;margin:10px 0;
+    font-size:13px;line-height:1.9;}
+  .m-case b{color:#6b5312;}
+  .m-data{font-family:"SF Mono",Consolas,monospace;font-size:13px;background:#2b2620;color:#e8dcc0;
+    padding:10px 14px;border-radius:6px;line-height:1.9;margin:10px 0;}
+  .m-btns{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .m-btns button{
+    padding:9px 22px;border-radius:22px;border:1px solid #6b5312;font-size:14px;cursor:pointer;
+    background:transparent;color:#4a3b1e;font-weight:600;
+  }
+  .m-btns button.primary{background:linear-gradient(135deg,#12997a,#0b6350);border-color:#0e7a5f;color:#fff;
+    box-shadow:0 3px 12px rgba(14,122,95,.4);}
+  .m-btns button.primary:hover{background:linear-gradient(135deg,#17b58f,#0e7a5f);transform:translateY(-1px);
+    box-shadow:0 6px 16px rgba(14,122,95,.55);}
+  .m-btns button:hover{background:rgba(107,83,18,.12);transform:translateY(-1px);}
+  .m-btns button.danger{background:linear-gradient(135deg,#c94a3d,#96271c);border-color:#b03a2e;color:#fff;}
+  .m-btns button.danger:hover{background:linear-gradient(135deg,#d85a4d,#a83428);}
+  .m-fade{animation:fadeIn .5s;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* 1982 对比分屏 */
+  .compare{display:flex;gap:8px;margin:12px 0;height:150px;border-radius:8px;overflow:hidden;}
+  .compare>div{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:8px;font-size:12px;font-weight:700;color:#fff;}
+  .cmp-before{background:linear-gradient(180deg,#7fd0c0 0%,#2e8b57 60%,#1a5c38 100%);}
+  .cmp-after{background:linear-gradient(180deg,#a89a7a 0%,#7a6f52 60%,#4d4433 100%);}
+  .sg-sil{position:absolute;bottom:22px;width:5px;border-radius:3px;background:rgba(14,90,50,.85);}
+  .counter{font-family:"SF Mono",Consolas,monospace;text-align:center;font-size:20px;font-weight:700;
+    color:#8a3b2b;margin:8px 0;}
+
+  /* 2012 条形图 */
+  .bars{margin:12px 0;}
+  .bars .brow{margin:8px 0;font-size:13px;}
+  .bars .blabel{display:flex;justify-content:space-between;margin-bottom:3px;}
+  .bars .btrack{height:16px;background:#e3d7b8;border-radius:3px;overflow:hidden;}
+  .bars .bfill{height:100%;background:linear-gradient(90deg,#2e8b57,#6fbf73);border-radius:3px;
+    transition:width 1.2s ease;}
+
+  /* 建设菜单 */
+  .facGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+  .facCard{background:linear-gradient(180deg,#f4eeda,#ece2c6);border:1px solid #c9bd97;border-radius:10px;padding:10px 12px;cursor:pointer;
+    transition:transform .15s,box-shadow .15s,border-color .15s;}
+  .facCard:hover{transform:translateY(-3px);border-color:#12997a;box-shadow:0 8px 18px rgba(14,122,95,.22);}
+  .facCard.locked{opacity:.45;cursor:not-allowed;filter:grayscale(.4);}
+  .facCard.locked:hover{transform:none;border-color:#c9bd97;box-shadow:none;}
+  .facCard h4{font-size:14px;margin-bottom:4px;}
+  .facCard .fc{font-size:12px;line-height:1.7;color:#4a4335;}
+  .facCard .ecoWarn{color:#b03a2e;font-weight:700;}
+  .facCard .pos{color:#1c7a4b;font-weight:700;}
+  .facCard .lockTag{font-size:11px;color:#8a6d1f;}
+  .facCard .reqTag{font-size:11px;color:#b03a2e;}
+
+  /* 开场 */
+  #intro{
+    position:fixed;inset:0;z-index:80;
+    background:radial-gradient(ellipse at 50% 30%,rgba(38,120,110,.35),transparent 60%),
+      linear-gradient(180deg,#071e2b 0%,#0a3a44 45%,#0d4f42 100%);
+    display:flex;align-items:center;justify-content:center;color:#eaf5ef;
+  }
+  #intro .inner{max-width:620px;padding:40px;text-align:center;
+    background:rgba(255,255,255,.03);border:1px solid rgba(143,216,184,.18);border-radius:18px;
+    box-shadow:0 30px 90px rgba(0,0,0,.55);backdrop-filter:blur(4px);}
+  #intro h1{font-size:31px;letter-spacing:3px;margin-bottom:8px;
+    text-shadow:0 0 24px rgba(143,216,184,.45);}
+  #intro .en{font-size:12px;opacity:.55;letter-spacing:4px;margin-bottom:34px;}
+  #intro .story{font-size:15px;line-height:2.2;text-align:left;opacity:.92;margin-bottom:36px;}
+  #intro .story em{color:#8fd8b8;font-style:normal;}
+  #introBtn{
+    background:linear-gradient(135deg,#6fd0a8,#12997a);color:#04231a;border:none;font-size:17px;font-weight:700;
+    padding:14px 56px;border-radius:30px;cursor:pointer;letter-spacing:4px;
+    box-shadow:0 6px 24px rgba(87,180,143,.45),0 0 34px rgba(143,216,184,.2);
+  }
+  #introBtn:hover{background:linear-gradient(135deg,#8fe0bc,#17b58f);transform:translateY(-2px);
+    box-shadow:0 10px 30px rgba(87,180,143,.6),0 0 44px rgba(143,216,184,.35);}
+  #intro .note{margin-top:22px;font-size:11px;opacity:.5;}
+  #intro .note a{color:#8fd8b8;cursor:pointer;text-decoration:underline;}
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:rgba(126,200,177,.35);border-radius:4px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(126,200,177,.55);}
+  ::-webkit-scrollbar-track{background:transparent;}
+  /* 决策档案库 */
+  .libBtn{
+    width:100%;margin-top:8px;padding:8px 0;font-size:12px;cursor:pointer;
+    background:rgba(126,200,177,.1);border:1px solid rgba(126,200,177,.35);border-radius:8px;color:#cfe9dc;
+  }
+  .libBtn:hover{background:rgba(126,200,177,.22);box-shadow:0 0 12px rgba(126,200,177,.3);}
+  #drawer .dw-link{color:#8fd8b8;font-weight:700;cursor:pointer;text-decoration:underline;font-size:12px;}
+
+  /* 城市等级徽章（屏幕左上角常驻） */
+  #cityBadge{
+    position:absolute;left:10px;top:30px;z-index:6;width:190px;
+    background:rgba(12,28,24,.82);border:1px solid rgba(255,255,255,.25);border-radius:10px;
+    padding:8px 10px;color:#fff;backdrop-filter:blur(4px);box-shadow:0 4px 14px rgba(0,0,0,.4);
+  }
+  #cityBadge .badgeTop{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;letter-spacing:1px;}
+  #cityBadge.lv3 #badgeText{color:#b8b8b8;}
+  #cityBadge.lv2 #badgeText{color:#6fb6ff;}
+  #cityBadge.lv1{border-color:rgba(255,215,106,.55);box-shadow:0 4px 14px rgba(0,0,0,.4),0 0 20px rgba(255,200,60,.28);}
+  #cityBadge.lv1 #badgeText{color:#ffd76a;text-shadow:0 0 10px rgba(255,200,60,.65);animation:goldShimmer 2.4s ease-in-out infinite;}
+  @keyframes goldShimmer{0%,100%{text-shadow:0 0 8px rgba(255,200,60,.4);}50%{text-shadow:0 0 16px rgba(255,220,120,.9);}}
+  #cityBadge .badgeBar{height:5px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden;margin:6px 0 4px;}
+  #cityBadge .badgeBar i{display:block;height:100%;border-radius:3px;transition:width .5s;}
+  #cityBadge.lv3 .badgeBar i{background:#b8b8b8;}
+  #cityBadge.lv2 .badgeBar i{background:#6fb6ff;}
+  #cityBadge.lv1 .badgeBar i{background:linear-gradient(90deg,#ffd76a,#ffb02e);}
+  #badgeHint{font-size:10px;opacity:.75;line-height:1.4;}
+  /* 晋升/降级全屏特效（3 秒自动关闭，不暂停） */
+  #levelFx{position:absolute;inset:0;z-index:40;display:none;align-items:center;justify-content:center;pointer-events:none;}
+  #levelFx.show{display:flex;}
+  #levelFx.up{background:radial-gradient(circle at 50% 42%,rgba(255,215,80,.5),rgba(255,215,80,.12) 45%,transparent 72%);animation:goldFlash 1s ease;}
+  #levelFx.down{background:rgba(24,8,6,.5);animation:darkFlash 1s ease;}
+  @keyframes goldFlash{0%{opacity:0;transform:scale(.6);}45%{opacity:1;}100%{opacity:1;transform:scale(1);}}
+  @keyframes darkFlash{0%{opacity:0;}40%{opacity:1;}100%{opacity:1;}}
+  #levelFx .fxCard{text-align:center;padding:26px 44px;border-radius:16px;animation:fxIn .5s ease;}
+  #levelFx .fxCard.up{background:rgba(255,246,214,.95);border:2px solid #e0a52e;color:#5c4a10;box-shadow:0 10px 50px rgba(255,200,60,.55);}
+  #levelFx .fxCard.down{background:rgba(40,16,12,.92);border:2px solid #c0553f;color:#ffd9d2;box-shadow:0 10px 50px rgba(0,0,0,.6);}
+  @keyframes fxIn{from{opacity:0;transform:translateY(20px) scale(.92);}to{opacity:1;transform:none;}}
+  #levelFx .fxBig{font-size:30px;font-weight:800;letter-spacing:3px;margin-bottom:8px;}
+  #levelFx .fxSub{font-size:17px;font-weight:700;margin-bottom:6px;}
+  #levelFx .fxNote{font-size:12px;opacity:.8;}
+  #levelFx.down .fxBig{animation:blinkRed .6s ease 3;}
+  /* 城市评级弹窗（不暂停游戏，自动关闭） */
+  #reviewPop{position:absolute;inset:0;z-index:35;display:none;align-items:center;justify-content:center;pointer-events:none;}
+  #reviewPop.show{display:flex;}
+  #reviewPop .rvCard{width:min(430px,92%);max-height:88%;overflow-y:auto;background:rgba(22,30,27,.94);border-radius:14px;
+    padding:16px 18px;color:#e8e2d0;font-size:13px;line-height:1.7;box-shadow:0 14px 50px rgba(0,0,0,.6);
+    pointer-events:auto;animation:fxIn .45s ease;border:2px solid #6b6b60;}
+  #reviewPop.gold .rvCard{border-color:#e0a52e;box-shadow:0 14px 50px rgba(0,0,0,.6),0 0 36px rgba(255,200,60,.4);}
+  #reviewPop.silver .rvCard{border-color:#6fb6ff;}
+  #reviewPop.bronze .rvCard{border-color:#8d8578;}
+  #reviewPop.yellow .rvCard{border-color:#d8a038;background:rgba(44,36,12,.94);}
+  #reviewPop.red .rvCard{border-color:#c0553f;background:rgba(40,14,12,.94);}
+  #reviewPop .rvHead{font-size:19px;font-weight:800;letter-spacing:2px;text-align:center;margin-bottom:8px;}
+  #reviewPop.gold .rvHead{color:#ffd76a;}
+  #reviewPop.silver .rvHead{color:#bfe0ff;}
+  #reviewPop.red .rvHead{color:#ff9c8a;}
+  #reviewPop.yellow .rvHead{color:#ffd98a;}
+  #reviewPop .rvBadge{text-align:center;margin-bottom:8px;}
+  #reviewPop .rvStars{font-size:22px;letter-spacing:4px;}
+  #reviewPop .rvLv{font-size:22px;font-weight:800;}
+  #reviewPop .rvSub{font-size:12px;opacity:.75;}
+  #reviewPop .rvTitle{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.07);border-radius:8px;padding:8px 10px;margin:8px 0;}
+  #reviewPop .rvIcon{font-size:26px;}
+  #reviewPop .rvTName{font-weight:700;font-size:14px;}
+  #reviewPop .rvTDesc{font-size:11px;opacity:.75;}
+  #reviewPop .rvStats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0;}
+  #reviewPop .rvStat{background:rgba(255,255,255,.06);border-radius:6px;padding:6px 9px;display:flex;justify-content:space-between;align-items:center;}
+  #reviewPop .rvStat .rvL{font-size:11px;opacity:.75;}
+  #reviewPop .rvStat .rvV{font-weight:700;}
+  #reviewPop .rvStat .strong{color:#ffd76a;}
+  #reviewPop .rvBonus,#reviewPop .rvReward{font-size:11.5px;background:rgba(255,215,106,.1);border:1px dashed rgba(255,215,106,.4);border-radius:6px;padding:6px 9px;margin:6px 0;}
+  #reviewPop .rvPenalty{font-size:11.5px;background:rgba(192,85,63,.16);border:1px solid rgba(192,85,63,.5);border-radius:6px;padding:6px 9px;margin:6px 0;color:#ffb4a3;}
+  #reviewPop .rvWarnLine{font-size:11.5px;background:rgba(216,160,56,.12);border:1px solid rgba(216,160,56,.5);border-radius:6px;padding:6px 9px;margin:6px 0;}
+  #reviewPop .rvChange{font-size:11.5px;color:#9fd8b8;margin:4px 0;}
+  #reviewPop .rvHint{font-size:10px;opacity:.55;margin-top:6px;}
+  #reviewPop .rvBtn{display:block;width:100%;margin-top:8px;padding:8px 0;border-radius:8px;border:none;cursor:pointer;
+    font-size:14px;font-weight:700;background:#0e7a5f;color:#fff;}
+  #reviewPop .rvBtn:hover{background:#12997a;}
+  /* 城市发展历程时间线 */
+  .thItem{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;background:rgba(0,0,0,.04);border-radius:6px;
+    padding:6px 9px;margin:5px 0;font-size:12px;}
+  .thItem.current{border:1px solid #0e7a5f;background:#eef7ef;}
+  .thItem .thYear{font-weight:700;color:#5c5747;}
+  .thItem .thTitle{font-weight:700;}
+  .thItem .thScore{font-size:11px;color:#8a8266;}
+  .thItem .thCur{font-size:10px;font-weight:700;color:#0e7a5f;border:1px solid #0e7a5f;border-radius:3px;padding:0 5px;}
+  @keyframes blinkRed{50%{color:#ff5a45;}}
+  /* 通知卡内的生态警告行 */
+  .nf-warn{color:#b03a2e;font-weight:700;font-size:11px;margin:2px 0;}
+  /* 建设菜单分类页签 */
+  .catTabs{display:flex;gap:6px;margin:6px 0 10px;flex-wrap:wrap;}
+  .catTab{
+    flex:1;min-width:100px;font-size:13px;padding:8px 4px;border-radius:18px;cursor:pointer;
+    border:1px solid #c9bd97;background:linear-gradient(180deg,#f6efdc,#ede3c6);color:#5c5747;font-weight:600;
+    box-shadow:0 1px 4px rgba(90,70,30,.12);
+  }
+  .catTab:hover{background:linear-gradient(180deg,#efe5c8,#e6d9b6);transform:translateY(-1px);}
+  .catTab.active{background:linear-gradient(135deg,#12997a,#0b6350);border-color:#0e7a5f;color:#fff;
+    box-shadow:0 3px 12px rgba(14,122,95,.4);}
+  /* 生态影响四色编码 */
+  .ecoG{color:#4CAF50;font-weight:700;}
+  .ecoY{color:#d69e00;font-weight:700;}
+  .ecoO{color:#FF9800;font-weight:700;}
+  .ecoR{color:#F44336;font-weight:700;}
+</style>
+</head>
+<body data-page-node-id="XrOmY0sEWzRlRjecbRqptu">
+
+<header data-page-node-id="BgowTcDZYF4B9FzEDpvx9i">
+  <div data-page-node-id="NhpcL94dIDOEfX2xbH9MHK"><h1 data-page-node-id="Si8jm6nHKd15r6SDiG8Qna">海草床退化模拟：一座城市的选择</h1><span class="sub" data-page-node-id="pw5wBFGLYQ67DOOS3EHPNL">1975 — 2025 · 生态教育互动体验</span></div>
+  <div data-page-node-id="W0jr3qvrgyzBKfVt6ibFU2">
+    <button id="btnAbout" data-page-node-id="iO1pgAefo3UXmdxxon46FW">ℹ️ 数据说明</button>
+  </div>
+</header>
+
+<main data-page-node-id="2hU0tLMeM1egSkbDRt4Wjy">
+  <div id="stage" data-page-node-id="15hYJZPPP8AWUy5DCzGuky">
+    <canvas id="cityCanvas" data-page-node-id="pcruo0MfbG4HU8pEu1fFVo"></canvas>
+    <canvas id="seaCanvas" data-page-node-id="cJ8I5Do90BJ2z2NxXFGMQy"></canvas>
+    <div id="viewLabelCity" data-page-node-id="gmpS9B7xylTzBEBvQXaddG">🏙️ 城市视角</div>
+    <div id="viewLabelSea" data-page-node-id="nv3lKxuXpGJQPEibHAINDE">🌊 水下视角 · 海草床生态</div>
+    <button id="viewToggle">🌊 切换到水下视角</button>
+    <div id="warnBanner" data-page-node-id="p4OkJYOkDIjsYNBu7amoxW"></div>
+    <div id="cityBadge" class="lv3">
+      <div class="badgeTop"><span id="badgeStars">⭐</span><span id="badgeText">三线城市</span></div>
+      <div class="badgeBar"><i id="badgeFill" style="width:0%"></i></div>
+      <div id="badgeHint">距离二线城市：还需 GDP +100</div>
+    </div>
+    <div id="levelFx"></div>
+    <div id="reviewPop"></div>
+    <div id="notifyWrap" data-page-node-id="aNFwrap1"></div>
+    <div id="drawer" data-page-node-id="aDrawer1"></div>
+    <div id="infoCard" title="点击关闭" data-page-node-id="WueK3Ex8UiCHrvF92MSd5z"></div>
+    <button id="buildFab" data-page-node-id="Jiox9WEA629Vb6DaJo8VMj">🏗️ 区域规划</button>
+  </div>
+  <aside id="panel" data-page-node-id="nG2w6mqoLobUR47tKpOZk5"></aside>
+</main>
+
+<footer data-page-node-id="mk1ykxiDLv6KSF3IFerfun">
+  <div id="yearLabel" data-page-node-id="KR1PF0CCl1BJOoRfCrQ10s">1975年</div>
+  <div id="tlWrap" data-page-node-id="c6b3QQB2VYyEYyZDb7doxX">
+    <div id="tlTrack" data-page-node-id="JrTZwE4X5D5Iv3utAPOYT0"></div>
+    <div id="tlFill" data-page-node-id="4TZGr4DvyAhU7UzxnNkJnP"></div>
+    <div id="tlCursor" data-page-node-id="64vvNhSNkSHDT1jVfz9P8j"></div>
+  </div>
+  <button class="ctrl" id="btnPause" data-page-node-id="Gp66CNSB2zq7v3WdmLWR4X">⏸ 暂停</button>
+  <button class="ctrl speed active" data-s="1" data-page-node-id="zBMfqarHhhqajFNGAwAe9K">▶ ×1</button>
+  <button class="ctrl speed" data-s="2">⏩ ×2</button>
+  <button class="ctrl speed" data-s="5" data-page-node-id="L9MeGuF6wC4jDR4Dx4Mtf2">⏩ ×5</button>
+  <button class="ctrl speed" data-s="10" data-page-node-id="C3VlD0cy8deyBH0Otz8Jjs">⏩ ×10</button>
+</footer>
+
+<div id="modalOverlay" data-page-node-id="1pwW5u880gDj3cBWvYmJBJ"><div id="modalBox" data-page-node-id="1wKzEBKKA1IHWI8ybkd7es"></div></div>
+
+<div id="intro" data-page-node-id="RLhDFa2gm4OBXYV1o43fqU">
+  <div class="inner" data-page-node-id="oAvDHcdlgYceSUsDm4ozNU">
+    <h1 data-page-node-id="VM6d2NSBGuI9Y5Jrssac4R">海草床退化模拟</h1>
+    <div class="en" data-page-node-id="2CcS3trR4IqxSjyGluL7pW">SEAGRASS DECLINE SIMULATION · A CITY'S CHOICE</div>
+    <div class="story" data-page-node-id="ichGZq4NRmMYuQJESVC4oM">
+      1975年，改革开放前夜。<br data-page-node-id="5yEQiv2CtPeSG94AJFbeZA">
+      你是这座沿海城市的管理者。<br data-page-node-id="DWGTAbzYdG44DR6zVYXW8Q">
+      此时，近岸海域的<em data-page-node-id="cCt3fDWaMuBSCPFKL8UkUA">海草床</em>广泛分布，<em data-page-node-id="iNXldD4jBSlclcCIuXVgJL">儒艮</em>在此栖息。<br data-page-node-id="cTuBrxdEL9dFirnd0HmByY">
+      但时代即将改变，发展的浪潮即将到来……<br data-page-node-id="DIu0OshbwTQKDfVr0sFpKW"><br data-page-node-id="eI0pqZD8Zl5ooaw9psgdb8">
+      <b data-page-node-id="aDirIntro1">这是一座虚构的沿海城市——没有固定的发展路线，也没有标准答案。</b><br data-page-node-id="aDirIntro2">
+      各部门、市民与组织会不时提出<b data-page-node-id="aDirIntro3">建议</b>：建港口、修虾塘、办园区、护海洋……<br data-page-node-id="aDirIntro4">
+      你可以采纳，也可以<b data-page-node-id="aDirIntro5">完全忽略</b>——一切由你主导。<br data-page-node-id="aDirIntro6">
+      GDP 决定城市的<b data-page-node-id="aDirIntro7">等级</b>：三线、二线、一线；长期停滞的三线城市，上级会调整领导班子。<br>
+      时间流速舒缓：1 年 = 5 分钟，城市会在你观察时自然生长、缓慢变化。<br><br>
+      你的每一个决策，都将影响这座城市和这片海洋的未来。
+    </div>
+    <button id="introBtn" data-page-node-id="hnpaRK73d7CoT6QMAhYH3B">开 始</button>
+    <div class="note" data-page-node-id="eP8FAaCrQHfAz5TH9yFLAF">本作品为严肃生态教育互动体验 · 历史案例数据真实 · 模拟数值为教育演示推演 · 右上角按钮可切换城市/水下视角（快捷键 V） · <a id="introAbout" data-page-node-id="RtfPFalvpupFNGkQVAAl3y">查看数据说明</a></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   海草床退化模拟：一座城市的选择
+   纯 HTML5 + CSS3 + JavaScript，无后端
+   ===================================================================== */
+
+/* ---------------- 工具 ---------------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+function mixColor(c1,c2,t){return [Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];}
+function rgb(c,a){return a===undefined?`rgb(${c[0]},${c[1]},${c[2]})`:`rgba(${c[0]},${c[1]},${c[2]},${a})`;}
+
+/* ---------------- 音效（WebAudio 基础音效） ---------------- */
+let AC=null;
+function beep(freq,dur,type,vol){
+  try{
+    if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type=type||"sine";o.frequency.value=freq;
+    g.gain.setValueAtTime(vol||0.08,AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(dur||0.2));
+    o.connect(g);g.connect(AC.destination);
+    o.start();o.stop(AC.currentTime+(dur||0.2));
+  }catch(e){}
+}
+const sndBuild=()=>{beep(660,0.15,"sine",0.09);setTimeout(()=>beep(880,0.25,"sine",0.09),120);};
+const sndWarn =()=>beep(180,0.4,"sawtooth",0.06);
+const sndEvent=()=>{beep(392,0.3,"triangle",0.08);setTimeout(()=>beep(311,0.5,"triangle",0.08),200);};
+const sndDoom =()=>{beep(220,0.6,"sawtooth",0.05);setTimeout(()=>beep(165,0.8,"sawtooth",0.05),300);};
+
+/* ---------------- 设施定义（四大分类建筑体系） ----------------
+   cat: economic=纯经济建筑 / infrastructure=基础设施 / industrial=高污染高收益 / environmental=环保设施
+   vis = 城市视角复用的绘制样式；requires 支持数组；minGDP 为前置条件；
+   boost/boostYears = 建成后 N 年内每年额外的 GDP 增速助推（逐年线性衰减）；
+   satStep = 民生设施抬高的满意度"均衡水位"台阶 */
+const FACILITIES=[
+ /* ===== 💼 纯经济建筑（对海草床影响极小或为零） ===== */
+ {id:"commercial",name:"商业街区",icon:"🏪",cost:400,years:2,trade:3,emp:2,unlock:1980,
+  instant:0.5,yearly:0.05,pollution:0.1,requires:null,eco:"mid",boost:1.8,boostYears:8,satStep:1,
+  cat:"economic",vis:"cbd",econText:"增速 +1.8%/年（8 年）",ecoText:"发展零售、餐饮等服务业"},
+ {id:"skyscraper",name:"摩天大楼",icon:"🏢",cost:800,years:3,trade:5,emp:2,unlock:1985,
+  instant:1,yearly:0.1,pollution:0.1,requires:null,eco:"mid",boost:2.5,boostYears:10,satStep:1,
+  cat:"economic",vis:"cbd",econText:"增速 +2.5%/年（10 年）",ecoText:"写字楼、总部经济"},
+ {id:"hitech",name:"科技园区",icon:"💻",cost:1000,years:4,trade:10,emp:3,unlock:1995,
+  instant:0.3,yearly:0.05,pollution:0.05,requires:["university"],eco:"good",boost:3.0,boostYears:10,satStep:1,
+  cat:"economic",vis:"hitech",econText:"增速 +3%/年（10 年）",ecoText:"高新技术产业，清洁无污染（需先建大学城）"},
+ {id:"finance",name:"金融中心",icon:"💰",cost:1500,years:5,trade:15,emp:2,unlock:2000,
+  instant:0,yearly:0,pollution:0,requires:["skyscraper","commercial"],minGDP:300,eco:"good",boost:3.5,boostYears:10,satStep:1,
+  cat:"economic",vis:"cbd",econText:"增速 +3.5%/年（10 年）",ecoText:"银行、证券、保险，区域金融枢纽"},
+ {id:"convention",name:"会展中心",icon:"🎪",cost:600,years:2,trade:10,emp:1,unlock:1990,
+  instant:0.5,yearly:0.05,pollution:0.1,requires:null,eco:"mid",boost:1.5,boostYears:7,satStep:1,
+  cat:"economic",vis:"tourism",econText:"增速 +1.5%/年（7 年）",ecoText:"举办展会，提升城市知名度"},
+ {id:"university",name:"大学城",icon:"🎓",cost:1200,years:5,trade:0,emp:2,unlock:1995,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:1.0,boostYears:12,satStep:2,
+  cat:"economic",vis:"school",econText:"增速 +1%/年（12 年）· 培养人才",ecoText:"培养人才，长期收益"},
+ {id:"cultural",name:"文化产业园",icon:"🎬",cost:500,years:2,trade:0,emp:1,unlock:2005,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:1.2,boostYears:8,satStep:1,
+  cat:"economic",vis:"school",econText:"增速 +1.2%/年（8 年）",ecoText:"创意产业、影视基地"},
+ {id:"tourism",name:"旅游设施",icon:"🏖️",cost:220,years:2,trade:0,emp:2,unlock:1990,
+  instant:3,yearly:0.5,pollution:0.5,requires:null,eco:"mid",boost:1.2,boostYears:7,satStep:1,
+  cat:"economic",vis:"tourism",econText:"增速 +1.2%/年（7 年）",ecoText:"岸线开发，影响相对较小"},
+ /* ===== 🏗️ 基础设施（必要，但有一定环境影响） ===== */
+ {id:"housing",name:"住宅区",icon:"🏘️",cost:300,years:2,trade:0,emp:1,unlock:1975,
+  instant:1,yearly:0.3,pollution:0.3,requires:null,eco:"mid",boost:0.5,boostYears:6,satStep:3,
+  cat:"infrastructure",vis:"housing",econText:"+人口容量 · +满意度",ecoText:"容纳更多人口"},
+ {id:"road",name:"道路网络",icon:"🛣️",cost:200,years:1,trade:2,emp:1,unlock:1975,
+  instant:0.5,yearly:0,pollution:0.1,requires:null,eco:"mid",boost:0.4,boostYears:5,satStep:1,
+  cat:"infrastructure",vis:"road",econText:"+交通效率",ecoText:"提升交通效率"},
+ {id:"power",name:"电力设施",icon:"⚡",cost:500,years:2,trade:0,emp:1,unlock:1980,
+  instant:2,yearly:0.5,pollution:0.5,requires:null,eco:"high",boost:1.2,boostYears:8,satStep:1,
+  cat:"infrastructure",vis:"industry",econText:"增速 +1.2%/年（8 年）",ecoText:"为城市提供能源"},
+ {id:"waterworks",name:"自来水厂",icon:"🚰",cost:400,years:2,trade:0,emp:1,unlock:1980,
+  instant:1.5,yearly:0.3,pollution:0.3,requires:null,eco:"mid",boost:0.4,boostYears:6,satStep:3,
+  cat:"infrastructure",vis:"school",econText:"+市民满意度",ecoText:"保障城市供水"},
+ {id:"school",name:"学校",icon:"🏫",cost:100,years:1,trade:0,emp:1,unlock:1978,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.2,boostYears:5,satStep:8,
+  cat:"infrastructure",vis:"school",econText:"+满意度（民生）",ecoText:"无生态影响"},
+ {id:"hospital",name:"医院",icon:"🏥",cost:130,years:1,trade:0,emp:1,unlock:1982,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.2,boostYears:5,satStep:8,
+  cat:"infrastructure",vis:"school",econText:"+满意度（民生）",ecoText:"无生态影响"},
+ {id:"park",name:"城市公园",icon:"🌳",cost:80,years:1,trade:0,emp:0,unlock:1995,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.1,boostYears:4,satStep:6,
+  cat:"infrastructure",vis:"park",econText:"+满意度",ecoText:"无生态影响，还能固碳"},
+ {id:"metro",name:"地铁",icon:"🚇",cost:400,years:3,trade:0,emp:1,unlock:2005,
+  instant:0.3,yearly:0.05,pollution:0.05,requires:null,eco:"mid",boost:0.6,boostYears:8,satStep:3,
+  cat:"infrastructure",vis:"metro",econText:"增速 +0.6%/年 · +满意度",ecoText:"地下工程，影响极小"},
+ /* ===== 🏭 高污染高收益（快速发展的捷径，代价巨大） ===== */
+ {id:"reclamation",name:"围填海工程",icon:"🚧",cost:800,years:3,trade:0,emp:2,unlock:1975,
+  instant:15,yearly:2,pollution:0.5,requires:null,eco:"severe",boost:1.5,boostYears:6,satStep:0,
+  cat:"industrial",vis:"reclamation",econText:"+土地资源 · 助推增速",ecoText:"海草床被泥沙直接掩埋",warning:true},
+ {id:"port",name:"深水港口",icon:"🚢",cost:1500,years:5,trade:25,emp:2,unlock:1980,
+  instant:12,yearly:1.5,pollution:0.5,requires:null,eco:"severe",boost:2.2,boostYears:10,satStep:0,
+  cat:"industrial",vis:"port",econText:"增速 +2.2%/年（10 年）",ecoText:"航道开挖与岸线硬化",warning:true},
+ {id:"farm",name:"虾塘 / 养殖场",icon:"🦐",cost:300,years:2,trade:0,emp:3,unlock:1975,
+  instant:6,yearly:4,pollution:3.5,requires:null,eco:"severe",boost:1.8,boostYears:8,satStep:0,
+  cat:"industrial",vis:"farm",econText:"增速 +1.8%/年（8 年）",ecoText:"富营养化逐年累积",warning:true},
+ {id:"industry",name:"重工业区",icon:"🏭",cost:1000,years:3,trade:5,emp:3,unlock:1985,
+  instant:8,yearly:3,pollution:2.5,requires:["port"],eco:"severe",boost:2.5,boostYears:10,satStep:0,
+  cat:"industrial",vis:"industry",econText:"增速 +2.5%/年（10 年）",ecoText:"污染逐年累积",warning:true},
+ {id:"chemical",name:"化工园区",icon:"🧪",cost:1200,years:4,trade:5,emp:3,unlock:1990,
+  instant:10,yearly:4,pollution:4,requires:["industry","port"],eco:"severe",boost:4.5,boostYears:10,satStep:0,
+  cat:"industrial",vis:"industry",econText:"增速 +4.5%/年（10 年）",ecoText:"化工产业，极高收益极高污染",warning:true},
+ {id:"dredge",name:"航道疏浚",icon:"⛏️",cost:500,years:1,trade:10,emp:1,unlock:1990,
+  instant:8,yearly:1,pollution:1,requires:null,eco:"high",boost:1.0,boostYears:5,satStep:0,
+  cat:"industrial",vis:"dredge",econText:"+贸易 · 增速 +1%/年",ecoText:"水体悬浮物增加",warning:true},
+ /* ===== 🌱 环保设施（减缓污染、修复生态，无直接经济收益） ===== */
+ {id:"sewage",name:"污水处理厂",icon:"♻️",cost:2000,years:3,trade:0,emp:1,unlock:2000,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.2,boostYears:6,satStep:3,
+  cat:"environmental",vis:"sewage",econText:"无直接收益（减缓 50% 污染影响）",ecoText:"治理见效慢，但生态正面"},
+ {id:"monitoring",name:"环保监测站",icon:"📡",cost:500,years:1,trade:0,emp:1,unlock:2005,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.1,boostYears:6,satStep:1,
+  cat:"environmental",vis:"sewage",econText:"提供实时污染数据 · 每年削减少量污染",ecoText:"监管倒逼减排，生态正面"},
+ {id:"wetland",name:"人工湿地",icon:"🌿",cost:1500,years:3,trade:0,emp:0,unlock:2010,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0,boostYears:0,satStep:3,
+  cat:"environmental",vis:"park",econText:"无经济收益",ecoText:"净化水质，每年恢复 +1% 覆盖度（正面）"},
+ {id:"fishingban",name:"禁渔区",icon:"🎣",cost:0,years:0.02,trade:0,emp:0,unlock:2015,
+  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:-0.5,boostYears:10,satStep:1,
+  cat:"environmental",vis:"road",econText:"-5% GDP（政策成本）",ecoText:"减缓 30% 海洋生物压力（正面）"},
+ {id:"restore",name:"海草床修复工程",icon:"🌱",cost:5000,years:5,trade:0,emp:1,unlock:2020.46,
+  instant:0,yearly:-2,pollution:0,requires:null,eco:"restore",boost:0,boostYears:0,satStep:2,
+  cat:"environmental",vis:"restore",econText:"无经济收益",ecoText:"每年缓慢恢复 +2% 覆盖度（正面）"},
+];
+const CATS={
+  economic:{label:"💼 经济建筑"},
+  infrastructure:{label:"🏗️ 基础设施"},
+  industrial:{label:"🏭 工业产业"},
+  environmental:{label:"🌱 环保设施"},
+};
+const ECO_LABEL={severe:"⚠️ 生态影响：严重",high:"⚠️ 生态影响：较大",mid:"⚠️ 生态影响：中等",
+  good:"🌿 生态影响：正面",restore:"🌿 生态影响：正面（修复）"};
+/* 工期加速：工地进度按游戏时间 3 倍推进（年份流速不变，只是施工更快）
+   例：深水港口 5 年工期 → 实际约 1.7 年建成 */
+const BUILD_RATE=3;
+function fmtBuildYears(y){const e=y/BUILD_RATE;return e%1?e.toFixed(1)+" 年":e+" 年";}
+/* 生态影响四色编码（按即时影响数值） */
+function ecoColorClass(v){return v<=2?"ecoG":v<=5?"ecoY":v<=10?"ecoO":"ecoR";}
+
+/* ---------------- 历史节点（唯一的强制暂停，数据不可改动） ----------------
+   到达关键年份时暂停并展示真实历史案例；其余任何情况都不打断游戏。 */
+const HIST_NODES=[
+ {year:1979.0,case:"swan"},
+ {year:1982.0,case:"laizhou"},
+ {year:1994.0,case:"hepu"},
+ {year:2012.0,case:"wenchang"},
+ {year:2020.46,case:"caofeidian"},
+ {year:2023.92,case:"gbt"},
+];
+
+/* ---------------- 随机建议系统（用户主导 + 偶尔的随机建议） ----------------
+   没有固定的发展路线，没有"正确答案"。
+   建议：随机 10-20 分钟（真实时间）一条；开场后 20 分钟才出现第一条；
+   只在屏幕角落显示，不暂停游戏；用户可以完全忽略，没有任何后果。 */
+const SUGGESTION_POOL=[
+ // 高污染高收益建议
+ {id:"s_farm",from:"🦐 养殖协会建议",facility:"farm",minYear:1975,
+  title:"开放沿海区域用于水产养殖",
+  text:"建议在近岸滩涂修建虾塘，可以增加就业和渔业收入，当年很多城市都是这么起步的。",
+  warning:"⚠️ 此项目对海草床有严重影响"},
+ {id:"s_land",from:"🏗️ 发改局建议",facility:"reclamation",minYear:1975,
+  title:"填海造陆，为城市扩展土地",
+  text:"建设用地紧张，围填海是最快的解决办法——但海草床会被泥沙直接掩埋。",
+  warning:"⚠️ 此项目对海草床有严重影响"},
+ {id:"s_port",from:"💼 商会建议",facility:"port",minYear:1980,
+  title:"建设深水港口发展对外贸易",
+  text:"我们需要一个深水港口来发展对外贸易，这将大幅提升 GDP！",
+  warning:"⚠️ 此项目对海草床有严重影响"},
+ {id:"s_industry",from:"🏭 工业局建议",facility:"industry",minYear:1985,
+  title:"重工业区收益极高",
+  text:"重工业区可以快速提升 GDP、带来大量就业，但会对环境造成较大影响。",
+  warning:"⚠️ 此项目对海草床有严重影响"},
+ {id:"s_chemical",from:"🧪 招商局建议",facility:"chemical",minYear:1990,
+  title:"化工园区是高利润产业",
+  text:"化工园区利润丰厚，招商项目都在排队——但需要注意环境保护。",
+  warning:"⚠️ 此项目对海草床有严重影响"},
+ {id:"s_dredge",from:"⚓ 港务局建议",facility:"dredge",minYear:1990,
+  title:"疏浚航道，提升贸易效率",
+  text:"航道淤浅影响吞吐，建议尽快疏浚——悬浮物会随水流扩散到海草床。"},
+ // 纯经济建议（低污染路线）
+ {id:"s_commercial",from:"🛍️ 商务局建议",facility:"commercial",minYear:1980,
+  title:"发展商业街区繁荣消费",
+  text:"发展零售、餐饮等服务业，成本适中、收益稳定，对环境影响很小。"},
+ {id:"s_skyscraper",from:"🏢 规划局建议",facility:"skyscraper",minYear:1985,
+  title:"摩天大楼提升城市形象",
+  text:"建设摩天大楼可以提升城市形象，吸引企业总部入驻，且对环境影响很小。"},
+ {id:"s_convention",from:"🎪 会展办建议",facility:"convention",minYear:1990,
+  title:"会展经济带动知名度",
+  text:"举办大型展会能显著提升城市知名度，带动服务业发展。"},
+ {id:"s_university",from:"🎓 教育局建议",facility:"university",minYear:1995,
+  title:"建设大学城培养人才",
+  text:"人才是长期发展的根基，大学城还能支撑科技园区等清洁产业。"},
+ {id:"s_hitech",from:"💻 科技局建议",facility:"hitech",minYear:1995,minGDP:250,
+  title:"发展科技园区是未来趋势",
+  text:"科技园区高收益且清洁无污染——但需要大学城培养的人才。"},
+ {id:"s_cultural",from:"🎬 文旅局建议",facility:"cultural",minYear:2005,
+  title:"文化产业园培育创意经济",
+  text:"创意产业、影视基地是无污染的新增长点，还能提升城市魅力。"},
+ {id:"s_finance",from:"💰 金融办建议",facility:"finance",minYear:2000,minGDP:400,
+  title:"打造区域金融枢纽",
+  text:"建设金融中心可以大幅提升 GDP，将城市打造成区域金融枢纽。"},
+ // 环保建议（当污染严重时）
+ {id:"s_sewage",from:"🌊 环保局建议",facility:"sewage",minYear:2000,
+  title:"海草床退化严重，建议治污",
+  text:"近岸污染累积，建议投资污水处理厂，可减缓 50% 的污染影响。",
+  trigger:()=>S.coverage<60},
+ {id:"s_wetland",from:"🌿 林业水利局建议",facility:"wetland",minYear:2010,
+  title:"人工湿地净化水质",
+  text:"建设人工湿地可以净化入海水质，每年缓慢恢复海草床。",
+  trigger:()=>S.coverage<50},
+ {id:"s_monitoring",from:"📡 环保局建议",facility:"monitoring",minYear:2005,
+  title:"建立环境监测体系",
+  text:"实时掌握污染数据，用监管倒逼减排，为决策提供依据。"},
+ {id:"s_fishingban",from:"🎣 渔业部门建议",facility:"fishingban",minYear:2015,
+  title:"设立禁渔区休养生息",
+  text:"划定禁渔区可减缓海洋生物压力，代价是渔业收入的一定下滑。"},
+ {id:"s_restore",from:"🌱 海洋局建议",facility:"restore",minYear:2020,
+  title:"启动海草床生态修复工程",
+  text:"海草床已严重退化。修复技术刚刚成熟——成本极高，但这是我们欠海洋的。",
+  trigger:()=>S.coverage<40},
+];
+
+/* ---------------- 游戏状态 ---------------- */
+const S={
+  started:false, running:false, paused:true, modalOpen:false,
+  speed:1, year:1975.0, endYear:2025,
+  gdp:100, gRate:2.0,          // GDP 复利指数（1975=100）与当前年度增速
+  trade:100, satisfaction:70, employment:75, population:25,
+  satEq:70, empEq:75,          // 满意度/就业率的"均衡水位"
+  satNoise:0, empNoise:0,      // 自然随机波动（区间内小幅摆动）
+  coverage:100, pollution:0, budget:500,
+  facilities:[],        // 已完成 {type, year}
+  building:[],          // {type, done}
+  boosts:[],            // 设施增速助推 {rate,total,remaining}
+  history:[], histAcc:0,// L0 趋势采样 {y,g,sat,cov,pol,emp}
+  lastBuildYear:1975,
+  dugongGone:false, dugongFinal:false,
+  decisions:[],         // 决策档案库 {icon,name,rel,via}
+  unlockedCases:{},     // 已解锁的真实案例
+  restoreNotified:false,
+  restoreInvested:0, totalReclaimed:0,
+  newsShown:{}, warnShown:{},
+  // 城市等级系统
+  level:3, maxLevel:3, lowStreak:0, fired:false, observer:false,
+  // 城市评级与称号系统（每 5 年评级：GDP×40% + 生态×40% + 平衡度×20%）
+  reviewIdx:0,            // 下一次评级的游标（REVIEW_YEARS）
+  title:null,             // 当前称号 {id,title,icon,desc,effect,bonus}
+  lastReview:null,        // 最近一次评分 {gdp,eco,balance,total}
+  prestige:0,             // 声望值
+  ratBonus:{funds:0,gRate:0,ecoRec:0,extraLoss:0,tax:0}, // 当前生效的评级/称号加成
+  titleHistory:[],        // 评级历程 {year,level,title,gdp,cov,score}
+  bestScore:0,            // 历史最高综合得分
+  under5Years:0,          // 覆盖度 <5% 持续年数（生态灾难斩杀线）
+  under40Years:0,         // 综合得分 <40 持续年数（发展失衡斩杀线）
+  ecoBanned:false,        // 中央督察：暂停新增工业项目审批
+  ecoOver:false, imbOver:false, tourismWarn:false,
+  // 随机建议系统（真实时间计秒；第一条 20 分钟后出现）
+  suggestCd:1200, suggestCount:0, suggestedIds:{}, ecoMsgYear:0,
+  eventQueue:[],
+};
+/* 城市等级：三线 <200 / 二线 200-500 / 一线 ≥500（基于 GDP，1975=100） */
+function cityLevel(){return S.gdp>=500?1:S.gdp>=200?2:3;}
+function lvlName(lv){return lv===1?"一线城市":lv===2?"二线城市":"三线城市";}
+/* 年代自然增速（模拟单位）：即使用户什么都不做，城市也随大势每年自然增长 1%~3% */
+function baseGrowth(y){
+  return 1+Math.random()*2;
+}
+
+/* ---------------- DOM ---------------- */
+const $=id=>document.getElementById(id);
+const cityC=$("cityCanvas"),seaC=$("seaCanvas");
+const stageEl=$("stage");
+const cx=cityC.getContext("2d"),sx=seaC.getContext("2d");
+let W=0,H1=0,H2=0,DPR=1;
+
+function fit(){
+  DPR=window.devicePixelRatio||1;
+  // 两个画布均为全舞台尺寸（同一时间只显示一个）
+  const r=stageEl.getBoundingClientRect();
+  W=r.width;
+  H1=r.height;H2=r.height;
+  cityC.width=Math.max(1,Math.round(W*DPR));cityC.height=Math.max(1,Math.round(H1*DPR));
+  cx.setTransform(DPR,0,0,DPR,0,0);
+  seaC.width=Math.max(1,Math.round(W*DPR));seaC.height=Math.max(1,Math.round(H2*DPR));
+  sx.setTransform(DPR,0,0,DPR,0,0);
+}
+/* 尺寸自适应强化：部分嵌入环境（如预览面板）初始尺寸为 0 或后续变化时不触发 window.resize，
+   用 ResizeObserver + 主循环周期检测兜底，确保画布始终铺满重绘 */
+let sizeRO=null;
+if(window.ResizeObserver){sizeRO=new ResizeObserver(()=>fit());}
+window.addEventListener("resize",fit);
+
+/* ---------------- 天际线（确定性生成）：t0 = 建成年代（progress 0~1），决定建筑年代风格 ---------------- */
+const R1=mulberry32(20250426);
+const SKY=[];
+for(let i=0;i<64;i++){
+  SKY.push({x:R1(),w:0.02+R1()*0.045,h:0.18+R1()*0.55,win:R1()>0.4,
+    t0:clamp(0.02+(i/64)*0.78+R1()*0.08,0.01,0.95)});
+}
+/* 水下海草（确定性生成）：thr 决定退化顺序——近岸先死、成斑块推进 */
+const R2=mulberry32(19750608);
+const BLADES=[];
+for(let i=0;i<300;i++){
+  const x=R2();
+  // 聚簇噪声：局部海草同生共死，退化呈斑块状；x 越大（越靠岸）thr 越高，先退化
+  const cluster=0.5+0.5*Math.sin(x*23+2.1)*Math.sin(x*7.7+0.6);
+  BLADES.push({x,len:0.10+R2()*0.30,phase:R2()*Math.PI*2,width:2+R2()*3,bend:R2()*0.8+0.4,
+    thr:clamp(cluster*0.55+R2()*0.45+x*0.35,0,1.15)});
+}
+
+/* ---------------- 鱼群 / 儒艮 / 悬浮物 ---------------- */
+const fishes=[];
+function fishTarget(){return Math.round(34*(S.coverage/100)*(1-S.pollution/160));}
+function updateFishes(dt){
+  const tgt=fishTarget();
+  if(fishes.length<tgt&&Math.random()<dt*2){
+    const dir=Math.random()>0.5?1:-1;
+    fishes.push({x:dir>0?-20:W+20,y:0.2+Math.random()*0.65,vx:dir*(22+Math.random()*30),
+      size:4+Math.random()*5,ph:Math.random()*6});
+  }
+  if(fishes.length>tgt&&Math.random()<dt*1.5)fishes.shift();
+  for(const f of fishes){
+    f.x+=f.vx*dt;f.y+=Math.sin(performance.now()/700+f.ph)*0.0004;
+    if(f.x<-40)f.x=W+30;if(f.x>W+40)f.x=-30;
+  }
+}
+const dugong={active:false,x:-100,y:0.55,vx:30,dir:1,finalSwim:false};
+let dugongTimer=6;
+function updateDugong(dt,t){
+  if(S.dugongGone&&!dugong.active)return;
+  if(!dugong.active){
+    dugongTimer-=dt;
+    const eligible=S.coverage>45&&S.year<1992;
+    if(S.year>=1990&&S.coverage<35&&!S.dugongFinal){
+      // 最后一次出现，然后永远离开
+      dugong.active=true;dugong.finalSwim=true;dugong.x=-80;dugong.dir=1;dugong.vx=55;
+      dugong.y=0.5;
+    }else if(eligible&&dugongTimer<=0){
+      dugong.active=true;dugong.finalSwim=false;
+      dugong.dir=Math.random()>0.5?1:-1;
+      dugong.x=dugong.dir>0?-80:W+80;
+      dugong.vx=dugong.dir*(26+Math.random()*16);
+      dugong.y=0.35+Math.random()*0.35;
+      dugongTimer=7+Math.random()*8;
+    }
+  }else{
+    dugong.x+=dugong.vx*dt;
+    dugong.y+=Math.sin(t*0.8)*0.00035;
+    const out=(dugong.dir>0&&dugong.x>W+90)||(dugong.dir<0&&dugong.x<-90);
+    if(out){
+      dugong.active=false;
+      if(dugong.finalSwim){
+        S.dugongGone=true;S.dugongFinal=true;
+        showNews("💔 儒艮在此区域消失","","此后，儒艮再未出现在这片海域。它们在中国的近海，已功能性灭绝。",9);
+        sndDoom();
+      }
+    }
+  }
+}
+const sediments=[];
+function updateSediment(dt){
+  const buildingDirty=S.building.some(b=>{
+    const f=FACILITIES.find(f=>f.id===b.type);
+    return f&&(f.id==="reclamation"||f.id==="dredge");
+  });
+  const farmPlume=S.building.some(b=>b.type==="farm")||S.pollution>35;
+  if((buildingDirty||farmPlume)&&sediments.length<90&&Math.random()<dt*20){
+    sediments.push({x:Math.random()*W,y:0.1+Math.random()*0.5,r:2+Math.random()*6,
+      vy:4+Math.random()*8,vx:(Math.random()-0.5)*10,life:1,brown:buildingDirty});
+  }
+  for(let i=sediments.length-1;i>=0;i--){
+    const s=sediments[i];s.y+=s.vy*dt;s.x+=s.vx*dt;s.life-=dt*0.25;
+    if(s.life<=0)sediments.splice(i,1);
+  }
+}
+
+/* ---------------- 模拟推进 ---------------- */
+function simulate(dy){
+  // ---- GDP：自然增长（+1%~+3%/年，随机）+ 设施助推 - 环境欠账 ----
+  let g=baseGrowth(S.year);
+  for(const b of S.boosts)g+=b.rate*(b.remaining/b.total);
+  const ecoDrag=clamp((S.pollution-40)*0.02,0,1.5)+clamp((40-S.coverage)*0.015,0,1);
+  g-=ecoDrag;
+  // 评级/称号加成（每 5 年评级重算，下次评级前持续生效）
+  g+=S.ratBonus.gRate;
+  if(S.title&&S.title.id==="coastal_tourism"&&S.coverage<50){
+    g-=1; // 滨海旅游城市条件失守：旅游收益下滑
+    if(!S.tourismWarn){S.tourismWarn=true;
+      showNews("⚠️ 旅游业受挫","生态条件恶化","海草床覆盖度低于 50%，滨海旅游收益明显下降。",8);}
+  }else if(S.coverage>=50)S.tourismWarn=false;
+  g=Math.max(-6,g);
+  S.gRate+=(g-S.gRate)*Math.min(1,dy*3); // 平滑显示
+  S.gdp*=1+S.gRate/100*dy;
+  S.gdp=Math.max(30,S.gdp);
+  // 生态崩溃的经济反噬：海草床覆盖度过低时开始拖垮经济
+  if(S.coverage<20)S.gdp*=1-0.05*dy; // 渔业崩溃：每年损失 5% GDP
+  if(S.coverage<10)S.gdp*=1-0.07*dy; // 旅游业受损：再损失 7%
+  if(S.coverage<5)S.gdp*=1-0.10*dy;  // 生态灾难：再损失 10%
+  // 增速助推逐年衰减
+  for(let i=S.boosts.length-1;i>=0;i--){
+    const b=S.boosts[i];b.remaining-=dy;
+    if(b.remaining<=0)S.boosts.splice(i,1);
+  }
+  // 财政收入随经济体量增长 + 评级拨款 − 环保税
+  S.budget+=(40+S.gdp*0.25+S.ratBonus.funds-S.ratBonus.tax)*dy;
+  // ---- 生态 ----
+  // 污水处理厂减缓污染影响（每个减 50%，最多两个即 75%）
+  const sewageN=Math.min(2,S.facilities.filter(f=>f.type==="sewage").length);
+  const pollFactor=1-0.5*sewageN; // 1 / 0.5 / 0.25
+  let coverLoss=0,pollIn=0;
+  for(const f of S.facilities){
+    const def=FACILITIES.find(d=>d.id===f.type);
+    if(def.id==="restore"){S.coverage=Math.min(100,S.coverage+2*dy);continue;}
+    if(def.id==="wetland"){S.coverage=Math.min(100,S.coverage+1*dy);continue;}
+    if(def.id==="monitoring"){S.pollution=Math.max(0,S.pollution-0.8*dy);continue;}
+    coverLoss+=def.yearly*dy;
+    pollIn+=def.pollution*dy;
+  }
+  // 自然退化：即使完全不建设，日常人类活动也使海草床每年 -0.3%~-0.8%（禁渔区可减缓 30%）
+  const fishBanN=S.facilities.some(f=>f.type==="fishingban");
+  S.coverage-=(0.3+0.5*Math.random())*(fishBanN?0.7:1)*dy;
+  S.coverage-=coverLoss*pollFactor;
+  S.coverage-=S.ratBonus.extraLoss*dy;                         // 称号负面加成（如养殖基地）
+  S.coverage=Math.min(100,S.coverage+S.ratBonus.ecoRec*dy);    // 称号正面加成（生态恢复）
+  S.pollution+=pollIn*pollFactor;
+  // 水质自然缓慢恶化：从"健康"向"轻度污染"漂移（非常慢）
+  S.pollution+=0.35*dy;
+  // 富营养化累积效应（污染超过 30 后开始额外拖累海草）
+  if(S.pollution>30)S.coverage-=Math.max(0,S.pollution-30)*0.04*dy;
+  // 污染自然缓慢消解
+  S.pollution=Math.max(0,S.pollution-S.pollution*0.012*dy);
+  S.coverage=Math.max(0.4,S.coverage);
+  S.pollution=Math.min(100,S.pollution);
+  // 在建工程
+  for(let i=S.building.length-1;i>=0;i--){
+    const b=S.building[i];
+    b.done+=dy*BUILD_RATE;
+    if(b.done>=b.years){
+      completeBuild(b);
+      S.building.splice(i,1);
+    }
+  }
+  // ---- 满意度：65%-75% 自然波动区间 + 民生台阶 - 环境欠账 ----
+  let stepBonus=0;
+  for(const f of S.facilities){
+    const def=FACILITIES.find(d=>d.id===f.type);
+    stepBonus+=(def.satStep||0)*0.6;
+  }
+  stepBonus=Math.min(20,stepBonus);
+  const eq=70+stepBonus-clamp((S.pollution-40)*0.25,0,15);
+  S.satEq=clamp(eq,40,92);
+  // 区间内小幅随机波动（每年 ±1-3%）
+  S.satNoise=clamp(S.satNoise+(Math.random()-0.5)*4*dy,-3,3);
+  S.satisfaction+=(S.satEq+S.satNoise-S.satisfaction)*Math.min(1,0.5*dy);
+  if(S.coverage<10)S.satisfaction-=5*dy;   // 生态恶化拖累幸福感
+  if(S.coverage<5)S.satisfaction-=10*dy;
+  S.satisfaction=clamp(S.satisfaction,5,100);
+  // ---- 就业：70%-80% 自然波动区间 + 设施岗位贡献 ----
+  let empBonus=0;
+  for(const f of S.facilities){
+    const def=FACILITIES.find(d=>d.id===f.type);
+    empBonus+=def.emp*0.8;
+  }
+  empBonus=Math.min(18,empBonus);
+  S.empEq=clamp(75+empBonus,55,99);
+  S.empNoise=clamp(S.empNoise+(Math.random()-0.5)*3*dy,-3,3);
+  S.employment+=(S.empEq+S.empNoise-S.employment)*Math.min(1,0.4*dy);
+  S.employment=clamp(S.employment,50,99);
+  // 人口
+  S.population+=S.population*0.008*(1+S.gdp/600)*dy;
+  // 生态崩溃的提示（节流：每 3 年最多一条）
+  if(S.year-S.ecoMsgYear>3){
+    if(S.coverage<5){S.ecoMsgYear=S.year;showNews("🚨 生态系统崩溃","多产业受冲击","海草床几乎消失，渔业与滨海旅游业受到严重冲击，GDP 大幅下滑。",8);sndDoom();}
+    else if(S.coverage<10){S.ecoMsgYear=S.year;showNews("⚠️ 海洋生态恶化","旅游业下滑","滨海旅游收入明显下滑，市民开始怀念那片海草床。",8);}
+    else if(S.coverage<20){S.ecoMsgYear=S.year;showNews("⚠️ 渔业资源枯竭","相关产业受损","近岸渔获量逐年锐减，靠海吃饭的行业开始受损。",8);}
+  }
+  // 城市等级滞留计时：连续停留在三线城市
+  if(cityLevel()===3){
+    S.lowStreak+=dy;
+    if(S.lowStreak>=10&&S.gdp<150&&!S.fired&&!S.observer)showGameOver();
+  }else S.lowStreak=0;
+  // Game Over 斩杀线：生态灾难（覆盖度<5% 持续 3 年）/ 严重失衡（<40 分持续 10 年）
+  if(S.coverage<5)S.under5Years+=dy;else S.under5Years=0;
+  if(S.under5Years>=3&&!S.fired&&!S.observer&&!S.ecoOver)showEcoDisaster();
+  const rtNow=calculateCityRating();
+  if(rtNow.total<40)S.under40Years+=dy;else S.under40Years=0;
+  if(S.under40Years>=10&&!S.fired&&!S.observer&&!S.imbOver)showImbalanceOver();
+  updateFishes(dy);updateDugong(dy,S.year);updateSediment(dy);
+}
+function completeBuild(b){
+  const def=FACILITIES.find(d=>d.id===b.type);
+  S.facilities.push({type:b.type,year:Math.floor(S.year)});
+  if(def.id!=="restore"){
+    S.coverage=Math.max(0.4,S.coverage-def.instant);
+  }
+  // 增速助推：建成后未来 N 年每年额外 +x% 增速，逐年线性衰减
+  if(def.boost>0&&def.boostYears>0){
+    S.boosts.push({rate:def.boost,total:def.boostYears,remaining:def.boostYears});
+  }
+  S.trade+=def.trade;
+  S.lastBuildYear=S.year;
+  if(def.id==="reclamation")S.totalReclaimed+=12;
+  sndBuild();
+}
+
+/* ---------------- 主循环 ---------------- */
+let lastT=0;
+function loop(t){
+  const dt=Math.min((t-lastT)/1000,0.1);lastT=t;
+  if(S.started&&!S.paused&&!S.modalOpen){
+    // 时间流速：默认 1年 = 5 分钟（×2→2.5分/年，×5→1分/年，×10→30秒/年）
+    const dy=S.speed*dt/300;
+    S.year+=dy;
+    simulate(dy);
+    processEvents();
+    checkNews();
+    // 随机建议计时（真实时间）：开场 20 分钟后出现第一条，之后每 10-20 分钟一条；
+    // 不暂停游戏，只在屏幕角落显示，可完全忽略
+    if(!S.observer&&S.year<S.endYear-2){
+      S.suggestCd-=dt;
+      if(S.suggestCd<=0){
+        fireSuggestion();
+        S.suggestCd=600+Math.random()*600; // 10-20 分钟（真实时间）
+      }
+    }
+    // L0 趋势采样：每 0.25 年一个点，供面板 sparkline
+    S.histAcc+=dy;
+    if(S.histAcc>=0.25){
+      S.histAcc=0;
+      S.history.push({y:S.year,g:S.gRate,sat:S.satisfaction,cov:S.coverage,pol:S.pollution,emp:S.employment});
+      if(S.history.length>240)S.history.shift();
+    }
+    if(S.year>=S.endYear){
+      S.year=S.endYear;
+      if(!S.modalOpen&&!S.endShown){
+        S.endShown=true;
+        S.running=false;
+        // 时间线轮回结束 → 直接进入最终报告；真实历史不主动弹出，
+        // 由玩家在"决策档案库 / 历史对照"中按需查看
+        showFinalReport();
+      }
+    }
+  }else{
+    updateFishes(dt*0.4);updateSediment(dt);
+  }
+  render(t/1000);
+  // 面板/时间线/横幅按 8fps 节流刷新；同时周期检测舞台尺寸变化（预览环境兜底）
+  panelTick+=dt;
+  if(panelTick>0.12){
+    panelTick=0;
+    const sw=stageEl.clientWidth,sh=stageEl.clientHeight;
+    if(sw&&sh&&(Math.abs(sw-W)>2||Math.abs(sh-H1)>2))fit();
+    updatePanel();updateBanner();
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ---------------- 事件系统 ---------------- */
+function processEvents(){
+  // 历史节点：唯一的强制暂停（到达关键年份，展示真实历史案例）
+  const node=HIST_NODES.find(n=>!n.shown&&S.year>=n.year);
+  if(node&&!S.modalOpen){
+    node.shown=true;
+    const c=caseById(node.case);
+    S.unlockedCases[c.id]=true;
+    S.paused=true;updatePauseBtn();
+    sndEvent();
+    const stat=cityStatHtml(c.id);
+    showModal(`
+      <span class="m-tag">📜 历史节点 | ${Math.floor(S.year)}年</span>
+      <div class="m-title tw">${c.ev}</div>
+      <div class="m-body"><div class="m-case tw">${c.html}</div>
+      ${stat?`<div class="tw" style="margin-top:8px;font-size:13px;border-left:3px solid #2f6d4f;padding-left:8px;"><b>你的城市：</b>${stat}</div>`:""}</div>`,
+      [{label:"我已了解，继续",primary:true,fn:()=>{
+        closeModal(()=>{if(S.year<S.endYear){S.paused=false;updatePauseBtn();}});
+      }}]);
+  }
+  // 每 5 年城市评级（不暂停游戏；2025 终评静默并入最终报告）
+  if(S.started&&S.reviewIdx<REVIEW_YEARS.length&&S.year>=REVIEW_YEARS[S.reviewIdx]){
+    const ry=REVIEW_YEARS[S.reviewIdx++];
+    performCityReview(ry>=S.endYear);
+  }
+  // 2020.6 修复觉醒：L1 小通知告知解锁，建不建由玩家决定，不打断游戏
+  if(!S.restoreNotified&&S.year>=2020.46){
+    S.restoreNotified=true;
+    showNotify({
+      src:"🌿 修复觉醒",
+      body:"海草床修复工程已解锁——成本极高、每年仅恢复约 2% 覆盖度。是否投入，由你决定。",
+      autoClose:10
+    });
+    beep(660,0.12,"sine",0.05);
+  }
+}
+/* ---------------- 随机建议系统 ----------------
+   从建议池随机抽取（满足年份/GDP/触发条件且未提过的）；
+   只在屏幕角落显示，不暂停游戏；忽略没有任何后果。 */
+function fireSuggestion(){
+  const pool=SUGGESTION_POOL.filter(s=>{
+    if(S.suggestedIds[s.id])return false;
+    if(S.year<(s.minYear||0))return false;
+    if(s.minGDP&&S.gdp<s.minGDP)return false;
+    if(s.trigger&&!s.trigger())return false;
+    const f=FACILITIES.find(d=>d.id===s.facility);
+    return f&&S.year>=f.unlock;
+  });
+  if(!pool.length)return;
+  const s=pool[Math.floor(Math.random()*pool.length)];
+  S.suggestedIds[s.id]=true;
+  S.suggestCount++;
+  showNotify({
+    src:`💡 ${s.from}`,
+    body:s.title+"——"+s.text,
+    warning:s.warning,
+    autoClose:18,
+    actions:[
+      {label:"📋 采纳建议",pri:true,fn:()=>openBuildMenu(s.facility)},
+      {label:"忽略",fn:null},
+    ]
+  });
+  beep(660,0.12,"sine",0.05);
+}
+/* 城市等级徽章（等级来自每 5 年的评级体系；晋升/降级特效由 performCityReview 触发） */
+function updateBadge(){
+  const lv=S.level||cityLevel();
+  const badge=$("cityBadge");
+  badge.className="lv"+lv;
+  $("badgeStars").textContent="⭐".repeat(4-lv);
+  $("badgeText").textContent=lvlName(lv);
+  let frac;
+  if(lv===3)frac=(S.gdp-100)/100;
+  else if(lv===2)frac=(S.gdp-200)/300;
+  else frac=1;
+  $("badgeFill").style.width=(clamp(frac,0,1)*100).toFixed(1)+"%";
+  $("badgeHint").textContent=S.title
+    ?`${S.title.icon} ${S.title.title}${S.lastReview?` · 综合 ${Math.round(S.lastReview.total)} 分`:""}`
+    :"完成首次评级后显示称号";
+}
+/* 晋升/降级全屏特效（3 秒自动关闭，不暂停游戏） */
+function showLevelFx(up){
+  const fx=$("levelFx");
+  const lv=S.level;
+  fx.innerHTML=up?`
+    <div class="fxCard up">
+      <div class="fxBig">🎉 恭喜晋升！</div>
+      <div class="fxSub">你的城市已成为${lvlName(lv)}</div>
+      <div class="fxNote">GDP 达到 ${Math.round(S.gdp)}，城市发展进入新阶段</div>
+    </div>`:`
+    <div class="fxCard down">
+      <div class="fxBig">⚠️ 城市降级</div>
+      <div class="fxSub">你的城市降为${lvlName(lv)}</div>
+      <div class="fxNote">GDP 降至 ${Math.round(S.gdp)}，请加快发展步伐</div>
+    </div>`;
+  fx.className="show "+(up?"up":"down");
+  if(up){sndEvent();beep(784,0.3,"triangle",0.08);}
+  else sndWarn();
+  clearTimeout(showLevelFx._t);
+  showLevelFx._t=setTimeout(()=>{fx.className="";},3200);
+}
+/* 调离岗位（Game Over）：连续停留三线城市超 10 年 且 GDP < 150 */
+function showGameOver(){
+  S.fired=true;
+  S.paused=true;updatePauseBtn();
+  sndDoom();
+  const endY=Math.floor(S.year);
+  showModal(`
+    <span class="m-tag">📋 调离通知</span>
+    <div class="m-title tw">你已被调离现任岗位</div>
+    <div class="m-body">
+      <div class="m-case tw">由于城市长期发展停滞，上级决定调整领导班子。</div>
+      <div class="m-data tw">
+        任期时间：1975 - ${endY} 年<br>
+        最终 GDP：${Math.round(S.gdp)}（1975 年 = 100）<br>
+        城市等级：${lvlName(cityLevel())}<br>
+        海草床覆盖度：${S.coverage.toFixed(1)}%
+      </div>
+      <div class="tw" style="font-size:14px;line-height:2;">
+        发展经济很重要，但也需要找到平衡……<br>
+        在你卸任后，这座城市的故事仍将继续。
+      </div>
+    </div>`,
+    [
+      {label:"🔄 重新开始",primary:true,fn:()=>location.reload()},
+      {label:"👀 继续观察（观察者模式）",fn:()=>{
+        closeModal(()=>{
+          S.observer=true;S.paused=false;setSpeed(10);
+          $("buildFab").style.display="none";
+          showNews("👀 观察者模式","","你已卸任。城市将自行演化下去，直到 2025 年——届时你将看到完整的生态报告。",9);
+        });
+      }},
+    ]);
+}
+/* 打字机效果：对 .tw 元素逐字显示 */
+function typewrite(box,done){
+  const els=Array.from(box.querySelectorAll(".tw"));
+  const texts=els.map(e=>e.innerHTML);
+  els.forEach(e=>e.innerHTML="");
+  let ei=0,ci=0;
+  function step(){
+    if(ei>=els.length){if(done)done();return;}
+    const el=els[ei];
+    ci+=1;
+    // 按字符推进（对 HTML 标签粗略处理：直接用原文本切片）
+    el.innerHTML=texts[ei].slice(0,ci);
+    if(ci>=texts[ei].length){ei++;ci=0;setTimeout(step,120);}
+    else setTimeout(step,texts[ei].length>160?8:16);
+  }
+  step();
+}
+function showModal(html,buttons,opts){
+  opts=opts||{};
+  S.modalOpen=true;
+  const ov=$("modalOverlay"),box=$("modalBox");
+  box.innerHTML=html+`<div class="m-btns" id="mBtns"></div>`;
+  ov.classList.add("show");
+  const btnRow=box.querySelector("#mBtns");
+  (buttons||[]).forEach(b=>{
+    const btn=document.createElement("button");
+    btn.textContent=b.label;
+    if(b.primary)btn.className="primary";
+    if(b.danger)btn.className="danger";
+    btn.addEventListener("click",()=>{b.fn&&b.fn();});
+    btnRow.appendChild(btn);
+  });
+  if(!opts.noType){
+    btnRow.style.visibility="hidden";
+    typewrite(box,()=>{btnRow.style.visibility="visible";});
+  }else{
+    btnRow.style.visibility="visible";
+  }
+}
+function closeModal(cb){
+  $("modalOverlay").classList.remove("show");
+  S.modalOpen=false;
+  if(cb)cb();
+}
+function resumeGame(newSpeed){
+  closeModal(()=>{
+    S.paused=false;updatePauseBtn();
+    if(newSpeed){setSpeed(newSpeed);}
+  });
+}
+
+/* ---------------- L1 角落小通知 / L2 侧边抽屉 ---------------- */
+/* L1：不打断游戏，8 秒自动消失；L2：点击"查看详情"在抽屉看完整背景 */
+function showNotify(opts){
+  const wrap=$("notifyWrap");
+  const card=document.createElement("div");
+  card.className="nfCard";
+  card.innerHTML=`<div class="nf-src">${opts.src||""}</div>
+    ${opts.warning?`<div class="nf-warn">${opts.warning}</div>`:""}
+    <div class="nf-body">${opts.body||""}</div>`;
+  const btns=document.createElement("div");
+  btns.className="nf-btns";
+  if(opts.actions){
+    for(const a of opts.actions){
+      const bd=document.createElement("button");
+      bd.textContent=a.label;
+      if(a.pri)bd.className="pri";
+      bd.addEventListener("click",()=>{card.remove();if(a.fn)a.fn();});
+      btns.appendChild(bd);
+    }
+  }else{
+    if(opts.detail){
+      const bd=document.createElement("button");
+      bd.textContent="查看详情";
+      bd.className="pri";
+      bd.addEventListener("click",()=>{openDrawer(opts.detail);});
+      btns.appendChild(bd);
+    }
+    const bc=document.createElement("button");
+    bc.textContent="知道了";
+    bc.addEventListener("click",()=>{card.remove();});
+    btns.appendChild(bc);
+  }
+  card.appendChild(btns);
+  wrap.prepend(card);
+  while(wrap.children.length>3)wrap.lastChild.remove();
+  setTimeout(()=>{if(card.parentNode)card.remove();},(opts.autoClose||8)*1000);
+}
+function openDrawer(html){
+  const d=$("drawer");
+  d.innerHTML=`<button class="dw-close">关闭 ✕</button>`+html;
+  d.querySelector(".dw-close").addEventListener("click",closeDrawer);
+  d.classList.add("show");
+}
+function closeDrawer(){$("drawer").classList.remove("show");}
+/* 新闻快讯也走 L1 通知通道（不打断游戏） */
+function showNews(src,sub,txt,secs){
+  showNotify({src:src+(sub?" · "+sub:""),body:txt,autoClose:secs||8});
+}
+
+/* ---------------- 决策档案库 ----------------
+   真实历史案例数据（年份、地点、数字）一个字都不能改。
+   案例绝不主动弹出（游戏中途不弹、50 年结束后也不连播）：
+   玩家的每次抉择被记录进档案库（按事件归档，不按时间排序），
+   只有玩家主动打开"决策档案库"或最终报告的"历史对照"时，才按需查看这些真实历史。 */
+const CASES=[
+ {id:"swan",ev:"山东荣成天鹅湖 · 潟湖养虾",rel:["farm"],
+  html:`<b>【真实案例：山东荣成天鹅湖】</b><br>
+    1979 年，为发展水产养殖，人工关闭了潟湖入口。<br>
+    水体交换不良，海草床开始退化。<br>
+    到 <b>1982 年</b>，鳗草几乎完全消失。<br>
+    （1986 年拆除堤坝后才开始恢复）
+    <div class="m-hr"></div>
+    这是中国海草床退化的早期警示。但在当时，很少有人意识到问题的严重性。`},
+ {id:"laizhou",ev:"山东莱州湾 · 围填海与港口",rel:["reclamation","port"],
+  html:`<b>【山东莱州湾芙蓉岛】</b><br>
+    曾经拥有约 <b>1300 km²</b> 的鳗草海草床<br>
+    —— 相当于整个深圳市面积的 2/3<br>
+    到 1982 年，已完全消失。
+    <div class="counter" style="margin-top:8px;">1300 km² → 0 km²</div>`},
+ {id:"hepu",ev:"广西合浦英罗港 · 养殖扩张",rel:["farm","reclamation"],
+  html:`<b>【广西合浦英罗港】</b><br>
+    1994 年：267 公顷海草床，儒艮在此觅食，渔民世代依赖这片海域。<br>
+    2000 年：仅剩 32 公顷——6 年间消失 88%。<br>
+    2001 年：只剩 0.1 公顷——7 年退化 <b>99.96%</b>，几乎完全消失。
+    <div class="m-hr"></div>
+    驱动因素：围填海开发 · 虾塘养殖扩张 · 滩涂挖沙虫 · 水质污染`},
+ {id:"wenchang",ev:"海南文昌 · 多重压力叠加",rel:["industry","dredge"],
+  html:`<b>【海南文昌】</b><br>
+    2012 年：31.8 km²<br>2018 年：24.2 km²<br>2020 年：18.8 km²<br>
+    8 年锐减 <b>41%</b>。
+    <div class="m-hr"></div>
+    退化原因（多重压力叠加）：养殖活动扩张 · 陆源污染增加 · 航道港口建设 · 填海造地工程`},
+ {id:"caofeidian",ev:"唐山曹妃甸 · 修复觉醒",rel:["restore"],
+  html:`<b>【全国最大规模海草床修复工程启动】</b><br>
+    时间：2020 年 6 月 8 日<br>地点：唐山曹妃甸<br>
+    规模：人工移栽海草植株 <b>450 万株</b> · 底播种子 <b>800 万粒</b>
+    <div class="m-hr"></div>
+    破坏一片海草床：建设周期 1-3 年，经济收益立竿见影。<br>
+    修复一片海草床：修复周期 5-10 年，成本极高，效果缓慢、不确定。<br>
+    <b style="color:#8a3b2b;">破坏容易，修复难。</b>`},
+ {id:"gbt",ev:"国家标准 GB/T 41339.4-2023",rel:["sewage"],
+  html:`<b>【中国首个海草床生态修复技术国家标准正式实施】</b><br>
+    时间：2023 年 12 月 1 日<br>标准编号：GB/T 41339.4-2023<br>
+    制定单位：中科院海洋研究所
+    <div class="m-hr"></div>
+    但是——与 1980 年代前相比，中国近岸海域超过 <b>80%</b> 的海草床已经消失；<br>
+    2013 年，全国仅剩 <b>87.6 km²</b>。我们能挽回多少？`},
+];
+function caseById(id){return CASES.find(c=>c.id===id);}
+/* 设施 → 关联案例（用于决策归档与案例解锁） */
+const FAC_CASE={farm:["swan","hepu"],reclamation:["laizhou","hepu"],port:["laizhou"],
+  industry:["wenchang"],chemical:["wenchang"],dredge:["wenchang"],restore:["caofeidian"],
+  wetland:["caofeidian"],sewage:["gbt"],monitoring:["gbt"]};
+/* 记录一次抉择（后台数据库：S.decisions），并解锁关联案例 */
+function recordDecision(f){
+  const rel=(FAC_CASE[f.id]||[]).slice();
+  for(const c of rel)S.unlockedCases[c]=true;
+  S.decisions.push({icon:f.icon,name:f.name,rel:rel,via:null});
+}
+/* 档案库抽屉：决策按"相关事件"归组，不按时间排序 */
+function openArchiveLibrary(){
+  const groups={};
+  for(const d of S.decisions){
+    const key=d.rel.length?d.rel[0]:"_civic";
+    (groups[key]=groups[key]||[]).push(d);
+  }
+  let html=`<h3>🗂️ 决策档案库</h3>
+    <div class="dw-src">你的每一次抉择都已记录在案 · 按事件归档</div>`;
+  const caseGroup=[];
+  for(const key in groups){
+    if(key==="_civic")continue;
+    const c=caseById(key);
+    if(c)caseGroup.push({c,items:groups[key]});
+  }
+  if(caseGroup.length){
+    for(const g of caseGroup){
+      const names=g.items.map(i=>i.icon+i.name).join("、");
+      html+=`<div class="dw-body" style="margin-bottom:8px;">
+        <b>📜 ${g.c.ev}</b><br>
+        <span style="font-size:12px;">相关抉择 ${g.items.length} 项：${names}</span><br>
+        <a class="dw-link" data-case="${g.c.id}">查看这个事件的真实结局 →</a></div>`;
+    }
+  }
+  if(groups._civic){
+    html+=`<div class="dw-body" style="margin-bottom:8px;"><b>🏙️ 城市民生与城建</b><br>
+      <span style="font-size:12px;">${groups._civic.map(i=>i.icon+i.name).join("、")}</span></div>`;
+  }
+  // 已解锁但尚无对应抉择的案例
+  const extra=CASES.filter(c=>S.unlockedCases[c.id]&&!caseGroup.some(g=>g.c.id===c.id));
+  for(const c of extra){
+    html+=`<div class="dw-body" style="margin-bottom:8px;"><b>📜 ${c.ev}</b><br>
+      <a class="dw-link" data-case="${c.id}">查看这个事件的真实结局 →</a></div>`;
+  }
+  if(!S.decisions.length&&!extra.length){
+    html+=`<div class="dw-body">档案库还是空的。你做出的每一次建设抉择，都会记录在这里。</div>`;
+  }
+  // 50 年轮回结束后，可查看总体对照（真实中国 vs 你的城市）
+  if(S.endShown){
+    html+=`<div class="m-hr"></div>
+      <div class="dw-body"><b>🧭 总体对照（50 年 · 真实的中国）</b><br>
+      <a class="dw-link" data-case="_total">查看总体对照 →</a></div>`;
+  }
+  openDrawer(html);
+  document.querySelectorAll("#drawer .dw-link").forEach(a=>{
+    a.addEventListener("click",()=>{
+      if(a.dataset.case==="_total"){
+        archiveModal("📜 50 年 · 真实的中国","总体对照",
+          `<div class="m-case tw">1980 年代前：海草床广泛分布<br>2013 年：仅剩 <b>87.6 km²</b><br>总体退化：超过 <b>80%</b><br><br>
+           你的城市：海草床覆盖度 100% → <b>${S.coverage.toFixed(1)}%</b></div>`,
+          "关闭对照");
+        return;
+      }
+      const c=caseById(a.dataset.case);
+      if(c){
+        const stat=cityStatHtml(c.id);
+        archiveModal(`📜 历史事件 | ${c.ev}`,"真实历史档案",
+          `<div class="m-case tw">${c.html}</div>${stat?`<div class="tw" style="margin-top:8px;font-size:13px;border-left:3px solid #2f6d4f;padding-left:8px;"><b>你的城市：</b>${stat}</div>`:""}`,
+          "关闭档案");
+      }
+    });
+  });
+}
+/* 档案弹窗（打字机效果，按钮回调可自定义） */
+function archiveModal(tag,title,body,btnLabel,onDone){
+  showModal(`
+    <span class="m-tag">${tag}</span>
+    <div class="m-title tw">${title}</div>
+    <div class="m-body">${body}</div>`,
+    [{label:btnLabel||"关闭档案",primary:true,fn:()=>{resumeGame();if(onDone)onDone();}}]);
+}
+/* 玩家城市的对应统计（在档案库中按需查看某事件时，附在真实案例后面） */
+function cityStatHtml(id){
+  const stats={
+    swan:`50 年间，你的城市修建了养殖场 <b>${countFac("farm")}</b> 处。`,
+    laizhou:`你的城市围填海 <b>${countFac("reclamation")}</b> 次（约 ${countFac("reclamation")*12} km²），建设深水港口 <b>${countFac("port")}</b> 个。`,
+    hepu:`你的城市拥有养殖场 <b>${countFac("farm")}</b> 处、围填海 <b>${countFac("reclamation")}</b> 次——和合浦一样，压力来自多个方向。`,
+    wenchang:`你的城市建设重工业区 <b>${countFac("industry")}</b> 个、化工园区 <b>${countFac("chemical")}</b> 个、航道疏浚 <b>${countFac("dredge")}</b> 次——多重压力的叠加，你并不陌生。`,
+    caofeidian:`你的城市建设修复工程 <b>${countFac("restore")}</b> 处${countFac("restore")?"——你在修复上下了注。":"——你还没有在修复上投入。"}`,
+    gbt:`你的城市建设污水处理厂 <b>${countFac("sewage")}</b> 座，当前水质：${waterLevelText()}。`,
+  };
+  return stats[id]||null;
+}
+
+/* =====================================================================
+   城市评级与称号系统
+   综合得分 = GDP指数×40% + 生态指数×40% + 平衡度×20%（每 5 年评定）
+   评级不暂停游戏：弹窗自动关闭，时间继续流逝；只有 Game Over 才真正暂停。
+   ===================================================================== */
+const REVIEW_YEARS=[1980,1985,1990,1995,2000,2005,2010,2015,2020,2025];
+/* ---- 评分公式（严格按照设计公式，不得改动） ---- */
+function gdpScoreCalc(){
+  const g=S.gdp;
+  if(g<150)return 20;
+  if(g<250)return 40;
+  if(g<400)return 60;
+  if(g<600)return 80;
+  return 100;
+}
+function ecoScoreCalc(){
+  let s=0;const c=S.coverage;
+  if(c>=80)s=100;
+  else if(c>=60)s=80;
+  else if(c>=40)s=60;
+  else if(c>=20)s=40;
+  else s=20;
+  // 额外加分：治污 / 修复 / 禁渔
+  if(countFac("sewage")>0)s+=5;
+  if(countFac("restore")>0)s+=10;
+  if(countFac("fishingban")>0)s+=5;
+  return Math.min(100,s);
+}
+function balanceCalc(g,e){
+  if(g>=70&&e>=70)return 100;                       // 完美平衡
+  if(g>=50&&e>=50)return 80;                        // 良好平衡
+  if((g>=80&&e<30)||(e>=80&&g<30))return 20;        // 严重失衡
+  return 50;
+}
+function calculateCityRating(){
+  const g=gdpScoreCalc(),e=ecoScoreCalc(),b=balanceCalc(g,e);
+  return {gdp:g,eco:e,balance:b,total:g*0.4+e*0.4+b*0.2};
+}
+function determineCityLevel(total,gdp,cov){
+  if(total>=80&&gdp>=400&&cov>=60)return 1;
+  if(total>=60||(gdp>=200&&cov>=40))return 2;
+  return 3;
+}
+/* ---- 14 种特色称号（bonus 适配本模拟：funds 财政/年 · gRate 增速加成 ·
+        ecoRec 覆盖度自然恢复/年 · extraLoss 额外退化/年 · tax 环保税/年） ---- */
+function hasFac(id){return countFac(id)>0;}
+function determineCityTitle(lv){
+  const g=S.gdp,c=S.coverage;
+  const T=(id,title,icon,desc,effect,bonus)=>({id,title,icon,desc,effect,bonus});
+  if(lv===1){ /* 一线城市称号（5 种） */
+    if(g>=600&&c>=60&&hasFac("hitech")&&hasFac("finance"))
+      return T("innovation_city","创新引领城市","💡","以科技创新和金融服务为核心，实现高质量发展","科技园区收益+10%，每年额外科研经费+20万",{funds:20,gRate:0.2});
+    if(c>=80&&g>=400)
+      return T("eco_model_city","生态文明标杆城市","🌿","在发展经济的同时，成功保护了海洋生态系统","海草床自然恢复速度+0.5%/年",{ecoRec:0.5});
+    if(g>=500&&c>=70)
+      return T("sustainable_city","可持续发展示范城市","⚖️","实现了经济发展与生态保护的完美平衡","GDP 与生态同时获得加成（增速+0.3%、恢复+0.3%/年）",{gRate:0.3,ecoRec:0.3});
+    if(hasFac("restore")&&c>=60)
+      return T("restoration_model","生态修复典范城市","🌱","成功从生态破坏中恢复，为其他城市树立榜样","获得国际环保组织资助，修复工程效率+50%（恢复+1%/年）",{ecoRec:1});
+    return T("economic_powerhouse","经济强市","💼","经济实力雄厚，同时保持良好生态环境","所有经济建筑收益+8%（增速+0.5%）",{gRate:0.5});
+  }
+  if(lv===2){ /* 二线城市称号（6 种） */
+    if(hasFac("industry")||hasFac("chemical"))
+      return T("industrial_hub","工业重镇","🏭","以重工业为支柱，经济发展迅速","工业收益+5%（增速+0.5%），但需每年支付环保税 10 亿",{gRate:0.5,tax:10});
+    if(hasFac("port"))
+      return T("port_city","港口贸易城市","🚢","依托港口优势，发展对外贸易","贸易收入+8%（增速+0.8%）",{gRate:0.8});
+    if(countFac("farm")>=2)
+      return T("aquaculture_base","渔业养殖基地","🦐","水产养殖业发达，但需注意环境保护","养殖收益+10%（增速+1%），但海草床退化加速 +0.5%/年",{gRate:1,extraLoss:0.5});
+    if(hasFac("sewage")&&c<60)
+      return T("transforming_city","环保转型城市","♻️","正在努力改善生态环境，走可持续发展道路","获得省级环保专项资金 +30 亿/年",{funds:30});
+    if(hasFac("tourism")&&c>=50)
+      return T("coastal_tourism","滨海旅游城市","🏖️","依托海洋资源发展旅游业","旅游收益+15%（增速+1.5%），但需维持海草床覆盖度>50%",{gRate:1.5});
+    return T("steady_growth","稳健发展城市","📈","经济与生态保持基本平衡，稳步前进","GDP 稳定增长（增速+0.3%）",{gRate:0.3});
+  }
+  /* 三线城市称号（4 种，无加成） */
+  if(g<200&&c>=60)
+    return T("underdeveloped","待开发城市","🌾","生态环境良好，但经济发展滞后","上级要求：5 年内 GDP 需达到 200，否则将调整领导班子",null);
+  if(c<30&&g>=300)
+    return T("environmental_warning","环境警示城市","⚠️","经济发展迅速，但生态破坏严重，亟需整改","中央环保督察：罚款 200 亿，暂停新增工业项目审批",null);
+  if(c<20||g<150)
+    return T("crisis_city","发展困境城市","📉","面临严重的发展困境，需要尽快调整策略","长期停留三线城市且 GDP<150 将被调离岗位",null);
+  return T("basic_development","基础建设城市","🏗️","处于发展初期，需要加快建设步伐","适度发展经济与民生设施",null);
+}
+/* ---- 等级奖励（每次评级重算，下次评级前持续生效） ---- */
+const LEVEL_REWARDS={
+  1:{name:"国家生态文明示范城市",funds:100,gRate:0.5,sat:10,prestige:50},
+  2:{name:"省级文明城市",funds:50,gRate:0.2,sat:5,prestige:20},
+  3:{name:"——",funds:0,gRate:0,sat:0,prestige:0},
+};
+/* ---- 每 5 年评级 ---- */
+function performCityReview(silent){
+  const rt=calculateCityRating();
+  const lv=determineCityLevel(rt.total,S.gdp,S.coverage);
+  const title=determineCityTitle(lv);
+  const prevLevel=S.level,prevTitle=S.title;
+  S.level=lv;S.title=title;S.lastReview=rt;
+  if(rt.total>S.bestScore)S.bestScore=rt.total;
+  S.maxLevel=Math.min(S.maxLevel,lv);
+  S.titleHistory.push({year:Math.floor(S.year),level:lv,title:prevTitle&&prevTitle.id===title.id?prevTitle:title,
+    gdp:Math.round(S.gdp),cov:+S.coverage.toFixed(1),score:Math.round(rt.total)});
+  // 奖励与加成：等级奖励 + 称号加成（下次评级前持续生效）
+  const rw=LEVEL_REWARDS[lv],tb=title.bonus||{};
+  S.ratBonus={funds:rw.funds+(tb.funds||0),gRate:rw.gRate+(tb.gRate||0),
+    ecoRec:tb.ecoRec||0,extraLoss:tb.extraLoss||0,tax:tb.tax||0};
+  if(rw.sat)S.satisfaction=clamp(S.satisfaction+rw.sat,5,100);
+  S.prestige+=rw.prestige;
+  // 三线专项：红色督察（生态破坏型处罚）/ 黄色警告（经济落后）
+  let penalty=null;
+  if(lv===3&&S.gdp>=400&&S.coverage<30){
+    S.budget=Math.max(0,S.budget-200);S.ecoBanned=true;penalty="red";
+  }else if(lv===3&&S.gdp<200&&S.coverage>=60){penalty="yellow";}
+  updateBadge();
+  if(silent)return;
+  if(prevLevel&&lv!==prevLevel)showLevelFx(lv<prevLevel);
+  showReviewPopup(rt,lv,title,penalty,prevTitle);
+}
+/* ---- 评级弹窗（不暂停游戏，6.5 秒自动关闭或点"继续"） ---- */
+function showReviewPopup(rt,lv,title,penalty,prevTitle){
+  const pop=$("reviewPop");
+  const theme=lv===1?"gold":lv===2?"silver":penalty==="red"?"red":penalty==="yellow"?"yellow":"bronze";
+  const head=theme==="red"?"🚨 中央环保督察组通知":theme==="yellow"?"⚠️ 上级部门通知":lv===1?"🎉 重大成就达成！":lv===2?"✅ 阶段性成果":"📋 五年评级";
+  const sub=lv===1?"生态文明示范城市":lv===2?"稳定发展":theme==="red"?"生态环境恶化":theme==="yellow"?"经济发展滞后":"需要改进";
+  const changed=prevTitle&&prevTitle.id!==title.id;
+  const rw=LEVEL_REWARDS[lv];
+  pop.innerHTML=`<div class="rvCard">
+    <div class="rvHead">${head}</div>
+    <div class="rvBadge"><div class="rvStars">${"⭐".repeat(4-lv)}</div><div class="rvLv">${lvlName(lv)}</div><div class="rvSub">${sub}</div></div>
+    <div class="rvTitle"><span class="rvIcon">${title.icon}</span>
+      <div><div class="rvTName">特色称号：${title.title}</div><div class="rvTDesc">${title.desc}</div></div></div>
+    <div class="rvStats">
+      <div class="rvStat"><span class="rvL">GDP 指数</span><span class="rvV">${rt.gdp} 分</span></div>
+      <div class="rvStat"><span class="rvL">生态指数</span><span class="rvV">${rt.eco} 分</span></div>
+      <div class="rvStat"><span class="rvL">平衡度</span><span class="rvV">${rt.balance} 分</span></div>
+      <div class="rvStat"><span class="rvL">综合得分</span><span class="rvV strong">${Math.round(rt.total)} 分</span></div>
+    </div>
+    ${rw.funds?`<div class="rvReward">🎁 等级奖励：${rw.name} · 财政 +${rw.funds}/年 · 增速 +${rw.gRate}% · 满意度 +${rw.sat} · 声望 +${rw.prestige}</div>`:""}
+    ${title.effect?`<div class="rvBonus">✨ 称号加成：${title.effect}</div>`:""}
+    ${theme==="red"?`<div class="rvPenalty">❌ 罚款 200 亿　🚫 暂停新增重工业区 / 化工园区审批　⏰ 限期整改</div>`:""}
+    ${changed?`<div class="rvChange">📜 称号变更：${prevTitle.icon}${prevTitle.title} → ${title.icon}${title.title}</div>`:""}
+    <div class="rvHint">💡 综合得分 = GDP 指数×40% + 生态指数×40% + 平衡度×20% · 评级不打断时间</div>
+    <button class="rvBtn" onclick="closeReviewPop()">继 续</button>
+  </div>`;
+  pop.className="show "+theme;
+  clearTimeout(showReviewPopup._t);
+  showReviewPopup._t=setTimeout(closeReviewPop,6500);
+  if(lv===1){sndEvent();beep(784,0.3,"triangle",0.08);}
+  else if(lv===2)beep(587,0.25,"triangle",0.06);
+  else sndWarn();
+}
+function closeReviewPop(){clearTimeout(showReviewPopup._t);$("reviewPop").className="";}
+/* ---- 城市发展历程（按需查看，不主动弹出） ---- */
+function openTitleHistory(){
+  const H=S.titleHistory;
+  const uniq=[...new Set(H.map(h=>h.title.id))];
+  const t1=uniq.filter(id=>H.some(h=>h.title.id===id&&h.level===1)).length;
+  let html=`<h3>📜 城市发展历程</h3>
+    <div class="dw-src">每 5 年一次评级 · 综合得分 = GDP×40% + 生态×40% + 平衡度×20%</div>`;
+  if(!H.length)html+=`<div class="dw-body">还没有评级记录。首次评级将在 1980 年进行。</div>`;
+  H.forEach((h,i)=>{
+    const cur=i===H.length-1;
+    html+=`<div class="thItem${cur?" current":""}">
+      <span class="thYear">${h.year}年</span>
+      <span>${"⭐".repeat(4-h.level)}</span>
+      <span class="thTitle">${h.title.icon} ${h.title.title}</span>
+      <span class="thScore">${h.score} 分 · GDP ${h.gdp} · 海草床 ${h.cov}%</span>
+      ${cur?'<span class="thCur">当前</span>':""}</div>`;
+  });
+  html+=`<div class="m-hr"></div><div class="dw-body">
+    🏅 已获得称号：${uniq.length} / 14 种<br>
+    ⭐ 一线城市称号：${t1} 个<br>
+    📊 历史最高评分：${Math.round(S.bestScore)} 分<br>
+    🌟 声望值：${S.prestige}</div>`;
+  openDrawer(html);
+}
+/* ---- Game Over 斩杀线：生态灾难 / 严重失衡（经济崩溃已有 showGameOver） ---- */
+function showEcoDisaster(){
+  S.ecoOver=true;S.fired=true;
+  S.paused=true;updatePauseBtn();sndDoom();
+  showModal(`
+    <span class="m-tag">🚨 生态灾难</span>
+    <div class="m-title tw">海草床生态系统已接近完全崩溃</div>
+    <div class="m-body">
+      <div class="m-case tw">海草床覆盖度已低于 5% 且持续 3 年未见改善，引发连锁生态灾难。</div>
+      <div class="m-data tw">
+        ❌ 渔业资源枯竭，相关产业崩溃<br>
+        ❌ 海岸侵蚀加剧，基础设施受损<br>
+        ❌ 水质恶化，旅游业严重下滑<br>
+        ❌ 儒艮等珍稀物种功能性灭绝<br>
+        📉 GDP 连续下滑（覆盖度<5% 时每年再损失 10%）
+      </div>
+      <div class="tw" style="font-size:14px;line-height:2;">
+        中央决定：撤销你的职务，启动生态修复紧急预案。<br>
+        <b>这不是游戏，这是真实发生过的悲剧。</b>
+      </div>
+      <div class="m-case tw" style="border-left-color:#8a6d1f;"><b>📰 真实案例</b><br>
+        广西合浦英罗港：7 年间海草床从 <b>267 公顷</b>减少到 <b>0.1 公顷</b>（退化 99.96%），
+        儒艮在中国近海已功能性灭绝。</div>
+    </div>`,
+    [
+      {label:"🔄 重新开始",primary:true,fn:()=>location.reload()},
+      {label:"👀 继续观察（观察者模式）",fn:()=>{
+        closeModal(()=>{
+          S.observer=true;S.paused=false;setSpeed(10);
+          $("buildFab").style.display="none";
+          showNews("👀 观察者模式","","你已卸任。城市将自行演化下去，直到 2025 年——届时你将看到完整的生态报告。",9);
+        });
+      }},
+    ]);
+}
+function showImbalanceOver(){
+  S.imbOver=true;S.fired=true;
+  S.paused=true;updatePauseBtn();sndDoom();
+  const rt=calculateCityRating();
+  showModal(`
+    <span class="m-tag">⚖️ 发展失衡</span>
+    <div class="m-title tw">城市发展严重失衡，无法实现可持续发展</div>
+    <div class="m-body">
+      <div class="m-data tw">
+        你的城市：<br>
+        GDP：${Math.round(S.gdp)}（${gdpScoreCalc()} 分）　海草床覆盖度：${S.coverage.toFixed(1)}%（${ecoScoreCalc()} 分）<br>
+        综合得分：${Math.round(rt.total)} 分，已连续 10 年低于 40 分
+      </div>
+      <div class="m-case tw" style="border-left-color:#b03a2e;"><b>问题所在</b><br>
+        过度追求单一目标 · 忽视了可持续发展 · 长期失衡导致系统崩溃</div>
+      <div class="tw" style="font-size:14px;line-height:2;">
+        真正的发展，需要经济与生态的平衡。</div>
+    </div>`,
+    [
+      {label:"🔄 重新开始",primary:true,fn:()=>location.reload()},
+      {label:"📊 查看完整报告",fn:()=>{closeModal(()=>showFinalReport());}},
+    ]);
+}
+
+
+function countFac(id){return S.facilities.filter(f=>f.type===id).length;}
+function showFinalReport(){
+  S.paused=true;updatePauseBtn();
+  const avgRate=((100-S.coverage)/50).toFixed(1);
+  const biodiversity=bioLevelText();
+  const gdpG=Math.round(S.gdp-100),pop0=25;
+  const b={
+    reclamation:countFac("reclamation"),port:countFac("port"),farm:countFac("farm"),
+    industry:countFac("industry"),dredge:countFac("dredge"),tourism:countFac("tourism"),
+    sewage:countFac("sewage"),restore:countFac("restore")};
+  showModal(`
+    <span class="m-tag">📊 50 年的选择 | 最终报告</span>
+    <div class="m-title tw">你的城市最终报告（1975 - 2025）</div>
+    <div class="m-body">
+      <div class="m-case tw"><b>🏙️ 经济成就</b><br>
+        累计增长：1975 年的 ${(S.gdp/100).toFixed(1)} 倍（当前增速 ${S.gRate.toFixed(1)}%）<br>
+        就业率：${Math.round(S.employment)}%　　贸易指数：${Math.round(S.trade)}<br>
+        人口增长：${pop0} 万 → ${S.population.toFixed(1)} 万人<br>
+        建设成果：<br>
+        • 深水港口 ${b.port} 个　• 工业区 ${b.industry} 个　• 养殖场 ${b.farm} 个<br>
+        • 围填海面积 ${b.reclamation*12} km²　• 旅游设施 ${b.tourism} 处</div>
+      <div class="m-case tw" style="border-left-color:#b03a2e;"><b>🌊 生态代价</b><br>
+        海草床覆盖度：100% → ${S.coverage.toFixed(1)}%<br>
+        消失速度：${avgRate}%/年（平均）<br>
+        生物多样性：${biodiversity}<br>
+        • 儒艮：功能性灭绝　• 水质等级：${waterLevelText()}<br>
+        修复投入：${b.restore} 处修复工程（约 ${Math.round(S.restoreInvested*0.25)} 亿元，模拟折算）<br>
+        修复效果：覆盖度恢复 +${Math.min(100,S.coverage).toFixed(1)}%（当前值）</div>
+      <div class="m-case tw" style="border-left-color:#b8860b;"><b>🏅 城市评级与称号</b><br>
+        最终评级：<b>${lvlName(S.level||cityLevel())}</b>　综合得分：<b>${S.lastReview?Math.round(S.lastReview.total):"—"} 分</b>
+        （GDP ${S.lastReview?S.lastReview.gdp:"—"} · 生态 ${S.lastReview?S.lastReview.eco:"—"} · 平衡度 ${S.lastReview?S.lastReview.balance:"—"}）<br>
+        最终称号：${S.title?S.title.icon+" <b>"+S.title.title+"</b>":"—"}　　🌟 声望值：${S.prestige}<br>
+        50 年间共 ${S.titleHistory.length} 次评级，获得 ${[...new Set(S.titleHistory.map(h=>h.title.id))].length} 种不同称号——
+        面板"📜 城市发展历程"可查看完整轨迹。</div>
+      <div class="m-case tw" style="border-left-color:#7d5a12;"><b>📋 五十年的治理轨迹</b><br>
+        50 年间，各部门与市民共向你提出 <b>${S.suggestCount}</b> 条建议——采纳与否，全由你决定。<br>
+        城市等级：从三线城市起步，最高达到 <b>${lvlName(S.maxLevel)}</b>，最终为 <b>${lvlName(cityLevel())}</b>。<br>
+        没有固定的发展路线，也没有标准答案——你的每一条路，都是自己选的。</div>
+      <div class="m-data tw">💭 对比：真实的中国<br><br>
+        1980 年代前：海草床广泛分布<br>2013 年：仅剩 87.6 km²<br>总体退化：超过 80%<br><br>
+        关键案例：<br>• 山东莱州湾：1300 km² → 0<br>• 广西合浦：267 公顷 → 0.1 公顷<br>• 海南文昌：8 年减少 41%</div>
+      <div class="tw" style="font-size:14px;line-height:2;">
+        <b>❓ 反思</b><br><br>
+        如果重新选择，你会做出不同的决策吗？<br>
+        当时的经济压力是真实的，<br>人们需要就业、需要发展、需要更好的生活。<br><br>
+        但生态的代价也是真实的，<br>而且往往是不可逆的。<br><br>
+        <b>我们能找到平衡吗？</b>
+      </div>
+    </div>`,
+    [
+      {label:"🔄 重新开始",primary:true,fn:()=>location.reload()},
+      {label:"📜 历史对照",fn:()=>{closeModal(()=>openArchiveLibrary());}},
+      {label:"📋 分享结果",fn:shareResult},
+      {label:"📚 了解更多",fn:showReferences}
+    ]);
+}
+function shareResult(){
+  const txt=`【海草床退化模拟：一座城市的选择】\n1975-2025，我管理了一座沿海城市 50 年：\n经济总量增长到 1975 年的 ${(S.gdp/100).toFixed(1)} 倍，而海草床覆盖度从 100% 降到 ${S.coverage.toFixed(1)}%。\n儒艮已功能性灭绝。破坏容易，修复难。\n中国真实历史：超过 80% 的海草床已经消失。\n我们能找到平衡吗？`;
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>alert("结果已复制到剪贴板"));}
+  else alert(txt);
+}
+function showReferences(){
+  showModal(`
+    <span class="m-tag">📚 主要参考资料</span>
+    <div class="m-title">科学与数据来源</div>
+    <div class="m-body" style="font-size:13px;line-height:2.1;">
+      • 周毅 等《中国海草资源分布现状、退化原因与保护对策》(2023)<br>
+      • 郑凤英 等《我国海草资源分布与退化研究》<br>
+      • 吴钟解 等《海南岛海草床分布变化及恢复建议》(2021)<br>
+      • 国家标准：GB/T 41339.4-2023《海洋生态修复技术指南 第4部分：海草床生态修复》<br>
+      • 中科院海洋研究所相关研究成果<br>
+      <div class="m-hr"></div>
+      ⚠️ 本作品中的模拟数值（建设成本、退化百分比等）为教育演示用途的合理推演；<br>
+      真实案例的年份、地点、数据均来自公开科研资料。
+    </div>`,
+    [{label:"关闭",primary:true,fn:()=>{closeModal();if(S.year>=2025)showFinalReport();}}]);
+}
+function showAbout(){
+  showModal(`
+    <span class="m-tag">ℹ️ 数据说明</span>
+    <div class="m-title">关于本作品的科学严谨性</div>
+    <div class="m-body" style="font-size:13px;line-height:2.1;">
+      <div class="m-case tw">⚠️ <b>数据说明</b><br><br>
+        本作品中的具体数值（如建设成本、海草床退化百分比等）<br>
+        为<b>教育演示用途</b>，基于真实案例的合理推演。<br><br>
+        真实的生态影响受多种因素影响，<br>
+        不同地区、不同条件下会有差异。<br><br>
+        但<b>退化的趋势、案例数据、历史事件均为真实</b>。</div>
+      <div class="tw" style="font-size:12px;">✅ 必须准确的内容：5 个历史节点的年份、地点、数据；退化的科学机制；真实案例引用。<br>
+      ⚠️ 需要标注的内容：游戏中的具体数值；简化的生态模型。<br>
+      ❌ 绝对避免：编造案例、夸大或缩小退化程度、误导性因果。</div>
+    </div>`,
+    [{label:"关闭",primary:true,fn:()=>{closeModal();if(S.year>=2025&&S.modalOpen===false&&S.year>=2025&&!S.paused)return;}}]);
+  // 若在最终报告状态，重新显示报告
+  if(S.year>=2025){
+    const obs=new MutationObserver(()=>{
+      if(!$("modalOverlay").classList.contains("show")){obs.disconnect();showFinalReport();}
+    });
+    obs.observe($("modalOverlay"),{attributes:true,attributeFilter:["class"]});
+  }
+}
+
+/* ---------------- 建设菜单（四大分类标签页） ---------------- */
+function reqNames(f){
+  if(!f.requires)return null;
+  const arr=Array.isArray(f.requires)?f.requires:[f.requires];
+  return arr.map(id=>{const d=FACILITIES.find(x=>x.id===id);return d?d.name:id;}).join("、");
+}
+function reqOk(f){
+  if(!f.requires)return true;
+  const arr=Array.isArray(f.requires)?f.requires:[f.requires];
+  return arr.every(r=>S.facilities.some(x=>x.type===r));
+}
+function impactHtml(f){
+  const v=f.instant;
+  const cls=ecoColorClass(v);
+  let txt;
+  if(f.yearly>0)txt=`🌊 正面影响（每年恢复 ${f.yearly}% 覆盖度）`;
+  else if(v===0)txt="🌊 无影响 (0%)";
+  else txt=`🌊 ${v<=2?"影响极小":v<=5?"影响较小":v<=10?"影响较大":"严重影响"} (-${v}%${f.yearly?` 即时 · ${f.yearly}%/年 持续`:""})`;
+  return `<span class="${cls}">${txt}</span>`;
+}
+function openBuildMenu(preselect){
+  if(S.modalOpen)return;
+  S.paused=true;updatePauseBtn();
+  let html=`<span class="m-tag">🏗️ 区域规划</span>
+    <div class="m-title">选择建设类型</div>
+    <div style="font-size:12px;color:#6b5312;margin-bottom:8px;">财政预算：¥ ${Math.round(S.budget)} 亿（模拟单位）</div>
+    <div class="catTabs">`;
+  const order=["economic","infrastructure","industrial","environmental"];
+  for(const cat of order){
+    html+=`<button class="catTab${cat==="economic"?" active":""}" data-cat="${cat}">${CATS[cat].label}</button>`;
+  }
+  html+=`</div>`;
+  for(const cat of order){
+    html+=`<div class="catPage" data-cat="${cat}" style="${cat==="economic"?"":"display:none;"}">`;
+    const list=FACILITIES.filter(f=>f.cat===cat);
+    if(cat==="economic")html+=`<div style="font-size:11px;color:#7a745e;margin:2px 0 6px;">纯经济发展路线：收益稳定，对海草床影响极小或为零。</div>`;
+    if(cat==="industrial")html+=`<div style="font-size:11px;color:#a34532;margin:2px 0 6px;">高收益捷径，但对海草床破坏严重——短期利益 vs 长期代价。</div>`;
+    if(cat==="environmental")html+=`<div style="font-size:11px;color:#2f6d4f;margin:2px 0 6px;">无直接经济收益，用于减缓污染、修复生态。</div>`;
+    html+=`<div class="facGrid">`;
+    for(const f of list){
+      const locked=S.year<f.unlock;
+      const noMoney=S.budget<f.cost;
+      const rn=reqNames(f);
+      const noReq=!reqOk(f);
+      const noGDP=f.minGDP&&S.gdp<f.minGDP;
+      const building=S.building.some(b=>b.type===f.id);
+      const banned=S.ecoBanned&&(f.id==="industry"||f.id==="chemical");
+      const disabled=locked||noMoney||noReq||noGDP||building||banned;
+      let reason="";
+      if(banned)reason=`<span class="reqTag">🚫 中央环保督察：暂停新增工业项目审批</span>`;
+      else if(locked)reason=`<span class="lockTag">🔒 ${f.id==="restore"?"2020 年修复觉醒后解锁":f.unlock+" 年后解锁"}</span>`;
+      else if(building)reason=`<span class="lockTag">🚧 建设中</span>`;
+      else if(noReq)reason=`<span class="reqTag">⚠️ 需要先建设：${rn}</span>`;
+      else if(noGDP)reason=`<span class="reqTag">⚠️ 需要 GDP ≥ ${f.minGDP}（当前 ${Math.round(S.gdp)}）</span>`;
+      else if(noMoney)reason=`<span class="reqTag">💰 预算不足</span>`;
+      html+=`<div class="facCard ${disabled?"locked":""}" data-id="${f.id}">
+        <h4>${f.icon} ${f.name}${f.warning?' <span class="reqTag">⚠️</span>':""}</h4>
+        <div class="fc">
+          建设成本：${f.cost} 亿　　建设时间：${f.years<0.1?"立即":fmtBuildYears(f.years)}<br>
+          经济收益：${f.econText}<br>
+          ${impactHtml(f)}<br>
+          <span style="font-size:11px;opacity:.75;">${f.ecoText}</span><br>${reason}
+        </div></div>`;
+    }
+    html+=`</div></div>`;
+  }
+  showModal(html,[{label:"返回",primary:true,fn:()=>closeModalAndResume()}],{noType:true});
+  // 分类页签切换
+  document.querySelectorAll(".catTab").forEach(tab=>{
+    tab.addEventListener("click",()=>{
+      document.querySelectorAll(".catTab").forEach(t=>t.classList.toggle("active",t===tab));
+      document.querySelectorAll(".catPage").forEach(p=>{
+        p.style.display=p.dataset.cat===tab.dataset.cat?"":"none";
+      });
+    });
+  });
+  document.querySelectorAll(".facCard").forEach(card=>{
+    card.addEventListener("click",()=>{
+      if(card.classList.contains("locked"))return;
+      tryBuild(card.dataset.id);
+    });
+  });
+  if(preselect){
+    const f=FACILITIES.find(d=>d.id===preselect);
+    if(f){
+      const cat=f.cat;
+      document.querySelectorAll(".catTab").forEach(t=>t.classList.toggle("active",t.dataset.cat===cat));
+      document.querySelectorAll(".catPage").forEach(p=>p.style.display=p.dataset.cat===cat?"":"none");
+    }
+    tryBuild(preselect);
+  }
+}
+function closeModalAndResume(){
+  closeModal(()=>{if(S.year<2025){S.paused=false;updatePauseBtn();}else showFinalReport();});
+}
+function tryBuild(id){
+  if(S.observer)return; // 观察者模式：不能再进行任何操作
+  const f=FACILITIES.find(d=>d.id===id);
+  if(!f||S.budget<f.cost)return;
+  if(!reqOk(f))return;
+  if(f.minGDP&&S.gdp<f.minGDP)return;
+  if(S.building.some(b=>b.type===id))return;
+  S.budget-=f.cost;
+  // 预留车位号：施工期就在"未来的成品位置"上生长，完工后贴图原地不动
+  S.building.push({type:id,done:0,years:f.years,slot:countFac(id)});
+  recordDecision(f);   // 抉择即刻记录进档案库
+  if(id==="restore")S.restoreInvested+=f.cost;
+  beep(520,0.15,"sine",0.08);
+  closeModalAndResume();
+}
+
+/* ---------------- 新闻快讯（不打断游戏） ---------------- */
+const NEWS={
+  1988:{src:"📰 《人民日报》1988年",txt:"沿海经济开发区建设热火朝天，利用外资成效显著。"},
+  1995:{src:"📰 《人民日报》1995年",txt:"沿海经济开发区建设成效显著，本市 GDP 连续 5 年增长超 15%。"},
+  2005:{src:"📰 地方晚报 2005年",txt:"养殖产业带再扩张，水产品出口创历史新高，数万人实现就业。"},
+  2015:{src:"📰 《中国海洋报》2015年",txt:"科学家警告：近海生态系统退化严重，海草床面积锐减威胁渔业资源。"},
+};
+function checkNews(){
+  for(const y in NEWS){
+    if(!S.newsShown[y]&&S.year>=+y){S.newsShown[y]=true;const n=NEWS[y];showNews(n.src,n.y||"",n.txt,8);}
+  }
+  // 2003 赤潮：满意度向下砸一锤（随后回落到被污染压低的均衡水位）
+  if(!S.newsShown["redtide"]&&S.year>=2003&&S.pollution>20){
+    S.newsShown["redtide"]=true;
+    S.satisfaction=Math.max(5,S.satisfaction-7);
+    showNews("🚨 赤潮爆发","市海洋环境监测站","近岸爆发大面积赤潮，鱼虾成片死亡，养殖户围住了市政府——污染的账单开始到期。",9);
+  }
+}
+let newsTimer=null;
+/* showNews 已统一走 L1 通知通道（见前文 showNotify） */
+
+/* ---------------- 知识彩蛋（点击触发，不打断游戏） ---------------- */
+const EGG={
+  dugong:`<h3>🦭 儒艮（海牛目）</h3>
+    • 海草床的旗舰物种<br>• 以海草为主要食物<br>• 被称为"美人鱼"的原型
+    <div class="hr"></div><b>在中国：</b><br>曾广泛分布于南海沿岸<br>随着海草床退化，已功能性灭绝
+    <div class="hr"></div>广西合浦儒艮保护区：<br>2009 年：540 公顷海草床<br>2020 年：仅存 88 公顷`,
+  seagrass:`<h3>🌿 海草的秘密</h3>
+    <b>海草 ≠ 海藻！</b>海草是唯一能在海水中开花的高等植物。
+    <div class="hr"></div><b>生态价值：</b><br>• 固碳能力是热带雨林的 2-15 倍<br>• 为 300 多种生物提供栖息地<br>• 稳定海床、防止海岸侵蚀<br>• 净化水质
+    <div class="hr"></div><b>退化后果：</b><br>• 碳储存释放，加剧气候变化<br>• 渔业资源崩溃<br>• 海岸线退化`,
+  algae:`<h3>🦠 富营养化的恶性循环</h3>
+    养殖废水 + 生活污水排放<br>↓<br>海水中氮、磷含量升高<br>↓<br>浮游植物和附生藻类大量繁殖<br>↓<br>
+    覆盖海草叶片 → 阻挡光照<br>↓<br>海草光合作用受阻 → 死亡<br>↓<br><b>生态系统崩溃</b>`,
+  farm:`<h3>🦐 养殖业的两面性</h3>
+    <b>经济贡献：</b><br>• 提供就业岗位<br>• 增加水产供应<br>• 提升 GDP
+    <div class="hr"></div><b>环境代价：</b><br>• 废水富含氮、磷<br>• 导致海水富营养化<br>• 沉积物硫化物含量升高<br>• 硫化物侵入海草组织<br>→ "硫化物胁迫"<br>→ 海草光合作用受损
+    <div class="hr"></div>海南"海澄文"经济圈：<br>海草床因虾塘养殖退化成斑块状分布`,
+};
+let eggTimer=null;
+function showEgg(html,px,py){
+  const el=$("infoCard");
+  el.innerHTML=html;
+  el.style.display="block";
+  const st=$("#stage").getBoundingClientRect();
+  el.style.left=clamp(px-st.left+14,8,st.width-290)+"px";
+  el.style.top=clamp(py-st.top-40,8,st.height-260)+"px";
+  clearTimeout(eggTimer);
+  eggTimer=setTimeout(()=>{el.style.display="none";},9000);
+}
+$("infoCard").addEventListener("click",()=>{$("infoCard").style.display="none";});
+seaC.addEventListener("click",e=>{
+  if(!S.started||S.modalOpen)return;
+  const r=seaC.getBoundingClientRect();
+  const px=e.clientX-r.left,py=e.clientY-r.top;
+  // 儒艮
+  if(dugong.active){
+    const dy=dugong.y*H2;
+    if(Math.hypot(px-dugong.x,py-dy)<60){showEgg(EGG.dugong,e.clientX,e.clientY);return;}
+  }
+  // 海草 / 附生藻类
+  const gx=px/W;
+  const blade=BLADES.find(b=>Math.abs(b.x-gx)<0.03);
+  if(blade&&S.coverage>3){
+    if(S.pollution>45)showEgg(EGG.algae,e.clientX,e.clientY);
+    else showEgg(EGG.seagrass,e.clientX,e.clientY);
+    return;
+  }
+});
+cityC.addEventListener("click",e=>{
+  if(!S.started||S.modalOpen)return;
+  const r=cityC.getBoundingClientRect();
+  const px=e.clientX-r.left,py=e.clientY-r.top;
+  // 点击养殖场/工业区
+  for(const f of cityFacSpots){
+    if(Math.hypot(px-f.x,py-f.y)<34){
+      if(f.type==="farm"){showEgg(EGG.farm,e.clientX,e.clientY);return;}
+    }
+  }
+});
+
+/* ---------------- 渲染调度 ---------------- */
+function render(t){renderCity(t);renderSea(t);}
+
+/* ---------------- 渲染：城市视角 ---------------- */
+let cityFacSpots=[];
+function renderCity(t){
+  const w=W,h=H1;
+  if(w<=0||h<=0)return;
+  const progress=(S.year-1975)/50;
+  // 天空：三段式渐变，温暖黄昏 → 工业灰蓝
+  const warm=[242,203,150],cool=[150,168,185];
+  const sky=mixColor(warm,cool,progress);
+  const grad=cx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0,rgb(mixColor(sky,[255,235,210],0.5)));
+  grad.addColorStop(0.55,rgb(mixColor(sky,[255,225,190],0.18)));
+  grad.addColorStop(1,rgb(sky));
+  cx.fillStyle=grad;cx.fillRect(0,0,w,h);
+  // 太阳：柔光光晕 + 日轮
+  const sunX=w*0.82,sunY=h*0.22+progress*h*0.06,sunR=26*(1-progress*0.3);
+  let halo=cx.createRadialGradient(sunX,sunY,sunR*0.3,sunX,sunY,sunR*4.2);
+  halo.addColorStop(0,`rgba(255,236,180,${0.5-progress*0.2})`);
+  halo.addColorStop(1,"rgba(255,236,180,0)");
+  cx.fillStyle=halo;cx.fillRect(sunX-sunR*4.5,sunY-sunR*4.5,sunR*9,sunR*9);
+  cx.fillStyle="rgba(255,246,214,.95)";
+  cx.beginPath();cx.arc(sunX,sunY,sunR,0,7);cx.fill();
+  // 漂移的云（确定性正弦驱动，无需状态）
+  const cl=clamp(1-progress*0.55,0.3,1); // 后期工业灰霾云更淡
+  for(let ci=0;ci<3;ci++){
+    const cwx=((t*(7+ci*4)+ci*430)%(w+320))-160;
+    const cwy=h*(0.09+ci*0.075)+Math.sin(t*0.3+ci)*4;
+    const cs=(34-ci*6)*(0.7+ci*0.25);
+    cx.fillStyle=`rgba(255,252,244,${(0.4-ci*0.09)*cl})`;
+    cx.beginPath();
+    cx.arc(cwx,cwy,cs*0.55,0,7);cx.arc(cwx+cs*0.55,cwy-cs*0.22,cs*0.42,0,7);
+    cx.arc(cwx-cs*0.5,cwy-cs*0.1,cs*0.38,0,7);cx.arc(cwx+cs*0.15,cwy+cs*0.18,cs*0.4,0,7);
+    cx.fill();
+  }
+  // 远山剪影：增加纵深（早期青绿，后期灰蓝）
+  const hillC=mixColor([110,140,120],[95,110,125],progress);
+  cx.fillStyle=rgb(hillC,0.4);
+  cx.beginPath();cx.moveTo(0,h*0.55);
+  cx.quadraticCurveTo(w*0.06,h*0.36,w*0.13,h*0.52);
+  cx.quadraticCurveTo(w*0.2,h*0.4,w*0.27,h*0.545);
+  cx.lineTo(w*0.27,h*0.56);cx.lineTo(0,h*0.56);cx.closePath();cx.fill();
+  // 海 / 陆分界：围填海使陆地扩张
+  const seaFrac=Math.max(0.10,0.30-S.totalReclaimed*0.004);
+  const coastX=w*(1-seaFrac);
+  // 海面颜色随污染变绿变褐（城市视角也能"看见"污染）
+  const p=S.pollution/100;
+  const sg=cx.createLinearGradient(0,h*0.55,0,h);
+  sg.addColorStop(0,rgb(mixColor(mixColor([80,140,160],[110,120,110],progress),[140,158,80],p*0.75)));
+  sg.addColorStop(1,rgb(mixColor(mixColor([40,90,110],[70,80,75],progress),[90,92,50],p*0.75)));
+  cx.fillStyle=sg;cx.fillRect(coastX,h*0.55,w-coastX,h*0.45);
+  // 日光在海面的反射光带（太阳正下方，随波闪动）
+  const gli=cx.createLinearGradient(coastX,0,w,0);
+  gli.addColorStop(0,"rgba(255,238,190,0)");
+  gli.addColorStop(clamp((sunX-coastX)/(w-coastX),0.05,0.95),"rgba(255,238,190,0.22)");
+  gli.addColorStop(1,"rgba(255,238,190,0)");
+  cx.fillStyle=gli;cx.fillRect(coastX,h*0.55,w-coastX,h*0.45);
+  // 海面波光
+  cx.strokeStyle="rgba(255,255,255,.25)";cx.lineWidth=1;
+  for(let i=0;i<6;i++){
+    const yy=h*0.6+i*(h*0.06),off=Math.sin(t*1.2+i)*8;
+    cx.beginPath();cx.moveTo(coastX+10+off,yy);cx.lineTo(coastX+(w-coastX)*0.6+off,yy);cx.stroke();
+  }
+  // 陆地（渐变 + 近岸草绿过渡）
+  const landTop=h*0.55;
+  const landC=mixColor([168,150,110],[120,118,110],progress);
+  const lg=cx.createLinearGradient(0,landTop,0,h);
+  lg.addColorStop(0,rgb(mixColor(landC,[120,150,95],0.35)));
+  lg.addColorStop(0.3,rgb(landC));
+  lg.addColorStop(1,rgb(mixColor(landC,[70,62,50],0.35)));
+  cx.fillStyle=lg;
+  cx.beginPath();
+  cx.moveTo(0,h);cx.lineTo(0,landTop+18);
+  // 自然海岸线（早期蜿蜒，后期平直）
+  if(progress<0.3){
+    cx.quadraticCurveTo(w*0.06,landTop-6,coastX*0.55,landTop+4);
+    cx.quadraticCurveTo(coastX*0.8,landTop+10,coastX,landTop+8);
+  }else{
+    cx.lineTo(coastX,landTop+8);
+  }
+  cx.lineTo(coastX,h);cx.closePath();cx.fill();
+  // 海岸白沫线：浪花拍岸（早期明显，后期岸线硬化减弱）
+  const foamA=clamp(0.5-progress*0.45,0.06,0.5);
+  cx.strokeStyle=`rgba(255,255,255,${foamA})`;cx.lineWidth=2;cx.setLineDash([9,7]);
+  cx.lineDashOffset=-t*22;
+  cx.beginPath();
+  cx.moveTo(coastX+Math.sin(t*1.6)*3,landTop+10);
+  cx.lineTo(coastX+Math.sin(t*1.6+1.2)*3,h);
+  cx.stroke();cx.setLineDash([]);cx.lineWidth=1;
+  // 护岸堤：沿海岸的深色石砌堤岸，把陆地与海"缝"在一起
+  cx.fillStyle=rgb(mixColor([96,86,70],[64,62,58],progress));
+  cx.fillRect(coastX-7,landTop+8,7,h-landTop-8);
+  cx.fillStyle="rgba(255,255,255,.14)";
+  for(let qy=landTop+16;qy<h;qy+=14)cx.fillRect(coastX-7,qy,7,1.2);
+  // 统一街区地台：一条连续的深色地面带，所有建筑（天际线+设施）都落在它上面
+  const plat=cx.createLinearGradient(0,landTop+18,0,landTop+40);
+  plat.addColorStop(0,rgb(mixColor(landC,[52,46,38],0.42)));
+  plat.addColorStop(1,"rgba(52,46,38,0)");
+  cx.fillStyle=plat;cx.fillRect(0,landTop+18,coastX,22);
+  // 背景衬托建筑群：天际线后排的密集低矮剪影，填满前排大楼之间的空隙
+  cx.fillStyle=rgb(mixColor(landC,[70,64,56],0.5),0.85);
+  for(let bx3=6;bx3<coastX-10;bx3+=17+((bx3*7)%9)){
+    const bh3=9+((bx3*13)%14)*(0.7+progress*0.8);
+    cx.fillRect(bx3,landTop+20-bh3,11+((bx3*5)%8),bh3+6);
+  }
+  cx.fillStyle="rgba(255,246,220,.10)";
+  for(let bx3=6;bx3<coastX-10;bx3+=17+((bx3*7)%9)){
+    const bh3=9+((bx3*13)%14)*(0.7+progress*0.8);
+    cx.fillRect(bx3,landTop+20-bh3,11+((bx3*5)%8),1.2);
+  }
+  // 建筑物：按建成年代分批出现，外观随年代演变（70s 平房 → 80s 宿舍 → 90s 厂房楼 → 00s 玻璃幕墙 → 10s 摩天楼）
+  for(const b of SKY){
+    if(progress<b.t0)continue;
+    const age=clamp((progress-b.t0)/0.08,0,1); // 建成后快速"长"出来
+    const bx=b.x*(coastX-14)+4;
+    const bw=b.w*w*2.2+8;
+    // 年代风格：色板 / 高度系数 / 顶部与立面
+    let bc,roofHf,winst;
+    if(b.t0<0.12){        // 70-80 年代初：低矮平房（暖黄，坡屋顶）
+      bc=[206,172,124];roofHf=0.38;winst="few";
+    }else if(b.t0<0.32){  // 80 年代：宿舍楼（暖灰，平顶）
+      bc=[186,162,128];roofHf=0.58;winst="gridWarm";
+    }else if(b.t0<0.52){  // 90 年代：厂房与宿舍楼（灰）
+      bc=[156,150,142];roofHf=0.78;winst="gridCool";
+    }else if(b.t0<0.72){  // 00 年代：玻璃幕墙（浅蓝反光）
+      bc=[150,178,196];roofHf=1.0;winst="glass";
+    }else{                // 10 年代后：摩天楼（冷色 + 尖顶）
+      bc=[92,108,130];roofHf=1.28;winst="glassDark";
+    }
+    const bh=b.h*(h*0.42)*roofHf*age;
+    const by=landTop+20-bh;
+    // 地面投影：伪 3D 的接地感
+    cx.fillStyle="rgba(30,26,20,.22)";
+    cx.beginPath();cx.ellipse(bx+bw/2+3,landTop+22,bw*0.62,4.5,0,0,7);cx.fill();
+    // 主立面：轻微纵向渐变（上亮下暗）
+    const bg2=cx.createLinearGradient(0,by,0,by+bh+20);
+    bg2.addColorStop(0,rgb(mixColor(bc,[255,255,255],0.16)));
+    bg2.addColorStop(1,rgb(mixColor(bc,[40,34,26],0.22)));
+    cx.fillStyle=bg2;cx.fillRect(bx,by,bw,bh+20);
+    // 右侧面：暗色侧脸 → 伪 3D 体块
+    cx.fillStyle=rgb(mixColor(bc,[20,16,12],0.42));
+    cx.fillRect(bx+bw,by+2,4.5,bh+18);
+    // 顶部受光边
+    cx.fillStyle="rgba(255,246,220,.35)";
+    cx.fillRect(bx,by,bw,1.6);
+    if(b.t0<0.12){
+      cx.fillStyle=rgb([168,120,84]);
+      cx.beginPath();cx.moveTo(bx-2,by);cx.lineTo(bx+bw/2,by-9);cx.lineTo(bx+bw+2,by);cx.closePath();cx.fill();
+    }else if(b.t0>=0.72){
+      cx.fillStyle="rgba(60,74,92,.9)";
+      cx.fillRect(bx+bw/2-1.5,by-14,3,14);
+      cx.beginPath();cx.arc(bx+bw/2,by-15,2.2,0,7);cx.fill();
+    }else{
+      cx.fillStyle="rgba(0,0,0,.15)";cx.fillRect(bx,by,bw,3);
+    }
+    if(b.win){
+      if(winst==="few"){
+        cx.fillStyle="rgba(120,80,50,.5)";
+        for(let wy=by+8;wy<landTop+10;wy+=12)for(let wx=bx+4;wx<bx+bw-5;wx+=11)
+          if(((wx*7+wy*13)|0)%10<3)cx.fillRect(wx,wy,3,4);
+      }else if(winst==="gridWarm"||winst==="gridCool"){
+        cx.fillStyle=winst==="gridWarm"?`rgba(255,220,140,${0.25+progress*0.4})`:`rgba(210,225,235,${0.2+progress*0.4})`;
+        for(let wy=by+6;wy<landTop+10;wy+=8)for(let wx=bx+3;wx<bx+bw-4;wx+=6)
+          if(((wx*7+wy*13)|0)%10<7)cx.fillRect(wx,wy,2.5,3.5);
+      }else{
+        for(let wy=by+6;wy<landTop+8;wy+=9){
+          cx.fillStyle=`rgba(${winst==="glassDark"?"150,190,220":"220,240,250"},0.28)`;
+          cx.fillRect(bx+2,wy,bw-4,4);
+        }
+      }
+    }
+    // 屋顶生活细节：水塔 / 天线 / 机组（按建筑哈希确定性摆放）
+    const rb=Math.abs(Math.sin(b.x*997.3));
+    if(rb<0.45){
+      const tx4=bx+bw*0.25,ty4=by-4;
+      cx.fillStyle=rgb(mixColor(bc,[30,26,20],0.5));
+      cx.fillRect(tx4-3.5,ty4-7,7,7);
+      cx.fillStyle=rgb(mixColor(bc,[30,26,20],0.7));
+      cx.fillRect(tx4-4.5,ty4-8,9,1.5);
+    }else if(rb<0.8){
+      const ax=bx+bw*0.6;
+      cx.strokeStyle=rgb(mixColor(bc,[30,26,20],0.7));cx.lineWidth=1.2;
+      cx.beginPath();cx.moveTo(ax,by);cx.lineTo(ax,by-9);cx.stroke();
+      cx.beginPath();cx.moveTo(ax-3,by-6);cx.lineTo(ax+3,by-6);cx.stroke();
+      cx.lineWidth=1;
+    }
+  }
+  // 已建成设施（手绘结构）：位置由"车位号"决定 → 施工期的贴图与完工后完全同位，完工只拆施工元素
+  cityFacSpots=[];
+  const list=S.facilities;
+  const SEA_VIS={farm:1,port:1,dredge:1,tourism:1,restore:1}; // 水上设施：无地面围挡
+  let artSilent=false; // 施工期绘制贴图时不注册点击热点
+  function facSpot(x,y,type){if(!artSilent)cityFacSpots.push({x,y,type});}
+  // 每种 vis 的成品锚点位置（slot = 同类设施序号）
+  function facPos(vid,slot){
+    switch(vid){
+      case "farm":return{x:coastX+(w-coastX)*(0.10+((slot*0.31)%0.72)),y:h*(0.68+(slot%3)*0.07)};
+      case "port":return{x:coastX+(w-coastX)*(0.22+slot*0.3),y:h*0.6};
+      case "industry":return{x:(coastX-70)*(0.35+slot*0.35)-30,y:landTop+22};
+      case "dredge":return{x:coastX+(w-coastX)*(0.5+((slot%2)*0.3)),y:h*0.78};
+      case "tourism":return{x:coastX+(w-coastX)*(0.08+slot*0.14),y:h*0.88};
+      case "restore":return{x:coastX+(w-coastX)*(0.18+slot*0.22),y:h*0.74};
+      case "housing":return{x:(coastX-60)*(0.08+((slot*0.21)%0.72)),y:landTop+26};
+      case "school":return{x:(coastX-60)*(0.14+((slot*0.24)%0.7)),y:landTop+26};
+      case "hospital":return{x:(coastX-60)*(0.14+((slot*0.24)%0.7)),y:landTop+26};
+      case "cbd":return{x:(coastX-70)*(0.3+((slot*0.3)%0.55)),y:landTop+26};
+      case "park":return{x:(coastX-60)*(0.1+((slot*0.26)%0.68)),y:landTop+28};
+      case "metro":return{x:(coastX-60)*(0.2+((slot*0.25)%0.6)),y:landTop+27};
+      case "hitech":return{x:(coastX-70)*(0.24+((slot*0.28)%0.5)),y:landTop+26};
+      case "sewage":return{x:(coastX-80)*0.5-10,y:landTop+26};
+      case "reclamation":return{x:coastX-26,y:landTop+26};
+      default:return{x:coastX*0.45,y:landTop+30};
+    }
+  }
+  // 成品贴图的包围盒（相对锚点）：施工期按此盒做"从下往上"的显现裁剪
+  function facBox(vid,slot){
+    switch(vid){
+      case "farm":return{x0:-24,y0:-6,x1:24,y1:26};
+      case "port":return{x0:-2,y0:-38,x1:(w-coastX)*0.24+4,y1:6+h*0.12};
+      case "industry":return{x0:-2,y0:-52,x1:54,y1:4};
+      case "dredge":return{x0:-28,y0:-20,x1:28,y1:24};
+      case "tourism":return{x0:-14,y0:-38,x1:14,y1:4};
+      case "restore":return{x0:-24,y0:-10,x1:24,y1:30};
+      case "housing":return{x0:-2,y0:-26,x1:62,y1:4};
+      case "school":return{x0:-2,y0:-34,x1:72,y1:4};
+      case "hospital":return{x0:-2,y0:-34,x1:46,y1:4};
+      case "cbd":return{x0:-2,y0:-(54+slot*6),x1:46,y1:4};
+      case "park":return{x0:-6,y0:-26,x1:54,y1:4};
+      case "metro":return{x0:-2,y0:-22,x1:24,y1:4};
+      case "hitech":return{x0:-2,y0:-26,x1:54,y1:4};
+      case "sewage":return{x0:-16,y0:-20,x1:48,y1:26};
+      case "reclamation":return{x0:-20,y0:-20,x1:16,y1:8};
+      default:return null;
+    }
+  }
+  // 成品贴图绘制（施工期与完工后共用同一份，保证"所见即所得"）
+  function drawFacArt(vid,slot,x,y,t){
+    if(vid==="farm"){
+      // 虾塘：沿岸水面上的格子塘群，编号越多位置越散
+      const gx=x,gy=y;
+      const pw=Math.min(46,(w-coastX)*0.14),ph2=13;
+      cx.fillStyle="#8fb6a8";cx.fillRect(gx-pw/2,gy,pw,ph2);
+      cx.strokeStyle="rgba(50,80,75,.7)";cx.lineWidth=1.5;
+      cx.strokeRect(gx-pw/2,gy,pw,ph2);
+      cx.beginPath();cx.moveTo(gx-pw/2,gy+ph2/2);cx.lineTo(gx+pw/2,gy+ph2/2);cx.stroke();
+      cx.strokeStyle="rgba(255,255,255,.4)";
+      cx.beginPath();cx.moveTo(gx-pw/3,gy+4);cx.lineTo(gx-pw/5,gy+4);cx.stroke();
+      facSpot(gx,gy+6,"farm");
+      // 排污口：虾塘向海里排绿水的"起因"可视化
+      if(S.pollution>10){
+        cx.strokeStyle="rgba(122,152,52,.5)";cx.lineWidth=2;
+        cx.beginPath();cx.moveTo(gx+pw/2,gy+ph2/2);
+        cx.quadraticCurveTo(gx+pw/2+10,gy+ph2+6,gx+pw/2+18,gy+ph2+14);cx.stroke();
+      }
+    }else if(vid==="port"){
+      // 突堤码头：栈桥深入海 + 吊机 + 停靠货船
+      const px0=x,py0=y;
+      const pierLen=(w-coastX)*0.24;
+      cx.fillStyle="#5b5248";
+      cx.fillRect(px0,py0,pierLen,6);
+      for(let pi=0;pi<4;pi++){
+        cx.fillRect(px0+8+pi*(pierLen-14)/3,py0+6,3,h*0.12);
+      }
+      // 吊机 ×2
+      cx.strokeStyle="#8a3b2b";cx.lineWidth=3;
+      for(let ci=0;ci<2;ci++){
+        const cxx=px0+14+ci*(pierLen*0.5);
+        cx.beginPath();cx.moveTo(cxx,py0);cx.lineTo(cxx,py0-30);cx.stroke();
+        cx.beginPath();cx.moveTo(cxx-14,py0-26);cx.lineTo(cxx+22,py0-30);cx.stroke();
+        cx.lineWidth=1;
+        cx.beginPath();cx.moveTo(cxx+18,py0-29);cx.lineTo(cxx+18,py0-14);cx.stroke();
+        cx.lineWidth=3;
+      }
+      // 货船
+      cx.fillStyle="#3f4c58";
+      cx.beginPath();
+      cx.moveTo(px0+pierLen*0.35,py0+16);
+      cx.lineTo(px0+pierLen*0.75,py0+16);
+      cx.lineTo(px0+pierLen*0.68,py0+26);
+      cx.lineTo(px0+pierLen*0.42,py0+26);
+      cx.closePath();cx.fill();
+      cx.fillStyle="#6a5a3f";cx.fillRect(px0+pierLen*0.5,py0+4,16,12);
+      facSpot(px0+pierLen*0.4,py0+14,"port");
+    }else if(vid==="industry"){
+      // 工业区：厂房+烟囱连排，烟雾浓度随污染加重
+      const ix=x,iy=y;
+      cx.fillStyle="#7d6a55";
+      cx.fillRect(ix,iy-26,52,26);
+      cx.fillStyle="#8f7a60";
+      cx.beginPath();cx.moveTo(ix+8,iy-26);cx.lineTo(ix+18,iy-38);cx.lineTo(ix+34,iy-38);cx.lineTo(ix+44,iy-26);cx.closePath();cx.fill();
+      for(let chi=0;chi<2;chi++){
+        const chx=ix+12+chi*24;
+        cx.fillStyle="#6b5a48";cx.fillRect(chx,iy-46,7,20);
+        const smokeA=clamp(0.18+p*0.4,0,0.55);
+        cx.fillStyle=`rgba(110,110,110,${smokeA})`;
+        for(let s2=0;s2<4;s2++){
+          const sy2=iy-50-((t*16+s2*14)%40);
+          cx.beginPath();cx.arc(chx+3+Math.sin(t+s2)*4,sy2,3.5+s2*2.2,0,7);cx.fill();
+        }
+      }
+      facSpot(ix+26,iy-12,"industry");
+    }else if(vid==="dredge"){
+      // 疏浚船：海面上的挖泥船，船下悬浮泥沙
+      const dx2=x,dy2=y;
+      cx.fillStyle="#8a6a3c";
+      cx.beginPath();
+      cx.moveTo(dx2-24,dy2);cx.lineTo(dx2+24,dy2);cx.lineTo(dx2+18,dy2+9);cx.lineTo(dx2-18,dy2+9);
+      cx.closePath();cx.fill();
+      cx.strokeStyle="#5b4a30";cx.lineWidth=3;
+      cx.beginPath();cx.moveTo(dx2+6,dy2);cx.lineTo(dx2+20,dy2-16);cx.stroke();
+      cx.lineWidth=1.5;
+      cx.beginPath();cx.moveTo(dx2+20,dy2-16);cx.lineTo(dx2+26,dy2-6);cx.stroke();
+      cx.fillStyle="rgba(150,120,70,.3)";
+      cx.beginPath();cx.arc(dx2-8,dy2+16,10,0,7);cx.arc(dx2+2,dy2+20,13,0,7);cx.fill();
+      facSpot(dx2,dy2-6,"dredge");
+    }else if(vid==="tourism"){
+      // 旅游设施：沙滩上的遮阳伞+浴场浮标
+      const tx=x,ty=y;
+      cx.strokeStyle="#c94f3d";cx.lineWidth=2;
+      cx.beginPath();cx.moveTo(tx,ty);cx.lineTo(tx,ty-22);cx.stroke();
+      cx.fillStyle="#e8735c";
+      cx.beginPath();cx.arc(tx,ty-22,13,Math.PI,0);cx.closePath();cx.fill();
+      cx.fillStyle="rgba(255,255,255,.9)";
+      cx.beginPath();cx.moveTo(tx,ty-35);cx.lineTo(tx-9,ty-22);cx.lineTo(tx-4,ty-22);cx.closePath();cx.fill();
+      cx.beginPath();cx.moveTo(tx,ty-35);cx.lineTo(tx+9,ty-22);cx.lineTo(tx+4,ty-22);cx.closePath();cx.fill();
+      cx.lineWidth=1;
+      facSpot(tx,ty-8,"tourism");
+    }else if(vid==="sewage"){
+      // 污水处理厂：圆形沉淀池 + 通海管道（治理的"起因"可视化）
+      const wx2=x,wy2=y;
+      cx.fillStyle="#9db3b8";
+      cx.beginPath();cx.arc(wx2,wy2,13,0,7);cx.fill();
+      cx.strokeStyle="#5e7a80";cx.lineWidth=2;
+      cx.beginPath();cx.arc(wx2,wy2,8,0,7);cx.stroke();
+      cx.beginPath();cx.arc(wx2+30,wy2+6,13,0,7);cx.stroke();
+      cx.strokeStyle="#5e7a80";
+      cx.beginPath();cx.moveTo(wx2+13,wy2);cx.lineTo(wx2+17,wy2);cx.stroke();
+      // 管道入海
+      cx.strokeStyle="#5e7a80";cx.lineWidth=3;
+      cx.beginPath();cx.moveTo(wx2+43,wy2+6);
+      cx.quadraticCurveTo(coastX-14,wy2+18,coastX+10,h*0.7);cx.stroke();
+      cx.lineWidth=1;
+      facSpot(wx2,wy2-18,"sewage");
+    }else if(vid==="restore"){
+      // 修复工程：海面上的作业筏 + 水下新栽海草簇
+      const rx=x,ry=y;
+      cx.fillStyle="#c9a04e";
+      cx.fillRect(rx-20,ry,40,6);
+      cx.strokeStyle="#7a5a20";cx.lineWidth=2;
+      cx.beginPath();cx.moveTo(rx-12,ry+6);cx.lineTo(rx-12,ry+14);cx.moveTo(rx+12,ry+6);cx.lineTo(rx+12,ry+14);cx.stroke();
+      // 新栽海草（水下的小绿簇）
+      cx.strokeStyle="#3f9e5f";cx.lineWidth=2;
+      for(let gi=0;gi<5;gi++){
+        const gx2=rx-16+gi*8;
+        cx.beginPath();cx.moveTo(gx2,ry+26);
+        cx.quadraticCurveTo(gx2+Math.sin(t+gi)*3,ry+18,gx2+Math.sin(t*1.3+gi)*4,ry+12);cx.stroke();
+      }
+      cx.lineWidth=1;
+      facSpot(rx,ry-4,"restore");
+    }else if(vid==="housing"){
+      // 住宅小区：连排小楼 + 阳台线
+      const hx=x,hy=y;
+      for(let ri=0;ri<2;ri++){
+        const rx=hx+ri*34,ry=hy-16-ri*6;
+        cx.fillStyle="#c8a882";cx.fillRect(rx,ry,26,16+ri*6);
+        cx.fillStyle="rgba(255,255,255,.45)";
+        for(let bl=ry+3;bl<hy;bl+=5)cx.fillRect(rx+3,bl,20,2);
+        cx.fillStyle="rgba(140,100,70,.9)";cx.fillRect(rx+2,hy,22,2);
+      }
+      facSpot(hx+30,hy-20,"housing");
+    }else if(vid==="school"||vid==="hospital"){
+      // 学校：小楼 + 红旗 + 操场；医院：白楼 + 红十字
+      const cxp=x,cyp=y;
+      if(vid==="school"){
+        cx.fillStyle="#d8b56a";cx.fillRect(cxp,cyp-18,40,18);
+        cx.fillStyle="#7a5a30";cx.fillRect(cxp+5,cyp-30,3,12);
+        cx.fillStyle="#c0392b";
+        cx.beginPath();cx.moveTo(cxp+8,cyp-30);cx.lineTo(cxp+18,cyp-27);cx.lineTo(cxp+8,cyp-24);cx.closePath();cx.fill();
+        cx.fillStyle="#9fb86e";cx.fillRect(cxp+44,cyp-10,26,10); // 操场
+        cx.strokeStyle="rgba(90,110,60,.8)";cx.strokeRect(cxp+44,cyp-10,26,10);
+      }else{
+        cx.fillStyle="#e8e6e0";cx.fillRect(cxp,cyp-22,44,22);
+        cx.fillStyle="#c0392b";
+        cx.fillRect(cxp+18,cyp-30,4,10);cx.fillRect(cxp+15,cyp-27,10,4);
+      }
+      facSpot(cxp+22,cyp-26,vid);
+    }else if(vid==="cbd"){
+      // CBD：玻璃幕墙塔楼，阶梯状顶
+      const bx2=x,by2=y;
+      const bh2=46+slot*6;
+      cx.fillStyle="#9fc2d8";cx.fillRect(bx2,by2-bh2,26,bh2);
+      cx.fillStyle="#7fa8c2";cx.fillRect(bx2+26,by2-bh2+12,18,bh2-12);
+      for(let wy=by2-bh2+6;wy<by2-4;wy+=7){
+        cx.fillStyle="rgba(235,250,255,.5)";cx.fillRect(bx2+2,wy,22,3);
+        cx.fillStyle="rgba(235,250,255,.4)";cx.fillRect(bx2+28,wy+4,14,3);
+      }
+      cx.fillStyle="#5d8098";cx.fillRect(bx2+6,by2-bh2-6,14,6);
+      facSpot(bx2+13,by2-bh2-10,"cbd");
+    }else if(vid==="park"){
+      // 城市公园：树 + 小径
+      const px3=x,py3=y;
+      cx.fillStyle="rgba(160,140,100,.6)";cx.fillRect(px3-4,py3-4,58,4);
+      for(let ti=0;ti<3;ti++){
+        const tx2=px3+ti*18,ty2=py3-6;
+        cx.fillStyle="#7a5a30";cx.fillRect(tx2-1.5,ty2-6,3,7);
+        cx.fillStyle=ti%2?"#3f9e5f":"#57b06b";
+        cx.beginPath();cx.arc(tx2,ty2-12,7,0,7);cx.arc(tx2-4,ty2-8,5,0,7);cx.arc(tx2+4,ty2-8,5,0,7);cx.fill();
+      }
+      facSpot(px3+20,py3-22,"park");
+    }else if(vid==="metro"){
+      // 地铁：绿色入口 + M 标
+      const mx2=x,my2=y;
+      cx.fillStyle="#2f4f48";cx.fillRect(mx2,my2-12,22,12);
+      cx.fillStyle="#101d1b";cx.fillRect(mx2+4,my2-9,14,9);
+      cx.fillStyle="#2ecc8f";
+      cx.font="bold 9px sans-serif";cx.textAlign="center";
+      cx.fillText("M",mx2+11,my2-16);
+      cx.font="18px serif";
+      facSpot(mx2+11,my2-20,"metro");
+    }else if(vid==="hitech"){
+      // 高科技园区：蓝色低层建筑 + 光伏板
+      const hx2=x,hy2=y;
+      cx.fillStyle="#7e9fc4";cx.fillRect(hx2,hy2-14,52,14);
+      cx.fillStyle="rgba(240,250,255,.5)";cx.fillRect(hx2+3,hy2-11,46,3);
+      for(let si=0;si<3;si++){
+        cx.save();
+        cx.translate(hx2+8+si*17,hy2-20);
+        cx.rotate(-0.45);
+        cx.fillStyle="#3a6ea8";cx.fillRect(-7,-4,14,8);
+        cx.strokeStyle="rgba(255,255,255,.5)";cx.lineWidth=0.8;
+        cx.strokeRect(-7,-4,14,8);
+        cx.restore();
+      }
+      cx.lineWidth=1;
+      facSpot(hx2+26,hy2-24,"hitech");
+    }else if(vid==="reclamation"){
+      // 围填海：新陆前缘的推土机 + 沙堆
+      const bx2=x,by2=y;
+      cx.fillStyle="#e0a52e";
+      cx.fillRect(bx2-12,by2-10,20,10);
+      cx.fillStyle="#b3811e";cx.fillRect(bx2-8,by2-16,10,6);
+      cx.fillStyle="#333";
+      cx.beginPath();cx.arc(bx2-8,by2+2,3.5,0,7);cx.arc(bx2+2,by2+2,3.5,0,7);cx.fill();
+      cx.strokeStyle="#e0a52e";cx.lineWidth=2.5;
+      cx.beginPath();cx.moveTo(bx2-14,by2-14);cx.lineTo(bx2-14,by2+2);cx.stroke();
+      // 沙堆
+      cx.fillStyle="rgba(190,165,110,.9)";
+      cx.beginPath();cx.arc(coastX-44,by2+6,10,Math.PI,0);cx.closePath();cx.fill();
+      cx.lineWidth=1;
+      facSpot(bx2,by2-20,"reclamation");
+    }
+  }
+  const vidCnt={};
+  list.forEach(f=>{
+    const def=FACILITIES.find(d=>d.id===f.type);
+    const vid=def.vis||f.type; // 新建筑可复用既有绘制样式
+    const slot=vidCnt[vid]||0;
+    const pos=facPos(vid,slot);
+    drawFacArt(vid,slot,pos.x,pos.y,t);
+    vidCnt[vid]=slot+1;
+  });
+  // 街区衔接氛围：沿建筑排的暖色低层薄霭（早期尘土小镇感 → 后期减淡）
+  const hazeA=clamp(0.14-progress*0.07,0.04,0.14);
+  const hz=cx.createLinearGradient(0,landTop+16,0,landTop+46);
+  hz.addColorStop(0,"rgba(255,242,208,0)");
+  hz.addColorStop(0.45,`rgba(255,242,208,${hazeA})`);
+  hz.addColorStop(1,"rgba(255,242,208,0)");
+  cx.fillStyle=hz;cx.fillRect(0,landTop+16,w,30);
+  // 岸缝柔化：堤岸与海面交界处的一道反光，消除"贴纸感"
+  const seam=cx.createLinearGradient(coastX-16,0,coastX+16,0);
+  seam.addColorStop(0,"rgba(255,255,255,0)");
+  seam.addColorStop(0.5,"rgba(255,255,255,.20)");
+  seam.addColorStop(1,"rgba(255,255,255,0)");
+  cx.fillStyle=seam;cx.fillRect(coastX-16,landTop+8,32,h-landTop-8);
+  // 在建工程：在"未来的成品位置"上，成品贴图从下往上逐渐显现；
+  // 施工元素（脚手架/塔吊/围挡/扬尘）叠加其上，完工时全部移除——贴图原地不动，无换装跳变
+  S.building.forEach((b,i)=>{
+    const defB=FACILITIES.find(d=>d.id===b.type);
+    const vid=defB?(defB.vis||b.type):b.type;
+    const slot=b.slot||0;
+    const box=facBox(vid,slot);
+    const prog=clamp(b.done/b.years,0,1);
+    if(!box){
+      // 无专属贴图的设施（道路等）：通用毛坯工地
+      const bx=clamp(w*0.12+i*130,20,coastX-120),by=landTop+30,siteW=54;
+      const curH=10+prog*40;
+      cx.fillStyle="rgba(30,26,20,.22)";
+      cx.beginPath();cx.ellipse(bx+siteW/2,by+4,siteW*0.62,4,0,0,7);cx.fill();
+      cx.fillStyle="#b9ab90";cx.fillRect(bx,by-curH,siteW,curH);
+      cx.strokeStyle="rgba(224,140,40,.85)";cx.lineWidth=1.2;
+      for(let fx2=bx;fx2<bx+siteW;fx2+=9){cx.beginPath();cx.moveTo(fx2,by);cx.lineTo(fx2,by-curH-7);cx.stroke();}
+      cx.lineWidth=1;
+      cx.fillStyle="rgba(0,0,0,.5)";cx.fillRect(bx,by+7,siteW,3.5);
+      cx.fillStyle="#f2c14e";cx.fillRect(bx,by+7,siteW*prog,3.5);
+      return;
+    }
+    const pos=facPos(vid,slot);
+    const bx=pos.x+box.x0,bw=box.x1-box.x0;
+    const fullH=box.y1-box.y0,groundY=pos.y+box.y1;
+    const revH=prog*fullH;
+    // 地面投影（仅陆上设施）
+    if(!SEA_VIS[vid]){
+      cx.fillStyle="rgba(30,26,20,.22)";
+      cx.beginPath();cx.ellipse(bx+bw/2,groundY+4,bw*0.62,4,0,0,7);cx.fill();
+    }
+    // 成品贴图从下往上显现：裁剪区底边固定在"地面"，顶边随进度上移
+    cx.save();
+    cx.beginPath();
+    cx.rect(bx-2,groundY-revH,bw+4,revH+1);
+    cx.clip();
+    artSilent=true;
+    drawFacArt(vid,slot,pos.x,pos.y,t);
+    artSilent=false;
+    cx.restore();
+    // 生长顶部的"毛坯切面"：正在施工的那一层
+    cx.fillStyle="rgba(185,171,144,.9)";
+    cx.fillRect(bx-2,groundY-revH-2,bw+4,2.5);
+    // 脚手架：两侧立柱 + 顶部横杆 + 斜撑，永远比建成区高出一截（"未完工"标志）
+    cx.strokeStyle="rgba(224,140,40,.85)";cx.lineWidth=1.2;
+    const scaT=groundY-revH-8;
+    cx.beginPath();cx.moveTo(bx-1,groundY);cx.lineTo(bx-1,scaT);cx.stroke();
+    cx.beginPath();cx.moveTo(bx+bw+1,groundY);cx.lineTo(bx+bw+1,scaT);cx.stroke();
+    cx.beginPath();cx.moveTo(bx-3,scaT);cx.lineTo(bx+bw+3,scaT);cx.stroke();
+    for(let fy=groundY;fy>scaT;fy-=9){
+      cx.beginPath();cx.moveTo(bx-1,fy);cx.lineTo(bx+bw+1,fy-4);cx.stroke();
+    }
+    cx.lineWidth=1;
+    // 扬尘烟雾：从生长顶部升腾、膨胀、消散
+    for(let k=0;k<6;k++){
+      const bt=((t*0.28)+(k/6))%1;
+      const px4=bx+bw*(0.2+0.6*((k*0.37)%1))+Math.sin(bt*5+k)*5+bt*10;
+      const py4=scaT+2-bt*30;
+      const pr=2.5+bt*11;
+      cx.fillStyle=`rgba(198,190,174,${(1-bt)*0.3*clamp(prog*3,0.3,1)})`;
+      cx.beginPath();cx.arc(px4,py4,pr,0,7);cx.fill();
+    }
+    // 塔吊：塔身 + 平臂 + 拉索 + 吊钩（吊钩高度贴着生长顶部）+ 红色警示灯
+    const crx=bx+bw+14,crt=groundY-88;
+    cx.strokeStyle="#c9541e";cx.lineWidth=3;
+    cx.beginPath();cx.moveTo(crx,groundY);cx.lineTo(crx,crt);cx.stroke();
+    cx.lineWidth=2;
+    cx.beginPath();cx.moveTo(crx-26,crt+6);cx.lineTo(crx+34,crt);cx.stroke();
+    cx.beginPath();cx.moveTo(crx-8,groundY-30);cx.lineTo(crx-26,crt+6);cx.stroke();
+    cx.beginPath();cx.moveTo(crx+6,groundY-30);cx.lineTo(crx+30,crt+0.7);cx.stroke();
+    cx.lineWidth=1;
+    const hx4=crx+16+Math.sin(t*1.1)*8;
+    const hTop=groundY-revH;
+    cx.beginPath();cx.moveTo(hx4,crt+1);cx.lineTo(hx4,hTop+4);cx.stroke();
+    cx.fillStyle="#3f4c58";cx.fillRect(hx4-3,hTop+4,6,5);
+    if(t%1<0.55){cx.fillStyle="#ff4b3a";cx.beginPath();cx.arc(crx,crt-2,2,0,7);cx.fill();}
+    // 施工围挡（陆上）或作业浮标（水上）
+    if(!SEA_VIS[vid]){
+      cx.fillStyle="#e8b83a";cx.fillRect(bx-6,groundY-5,bw+32,5);
+      cx.fillStyle="rgba(60,52,40,.8)";
+      for(let fz=bx-4;fz<bx+bw+24;fz+=9)cx.fillRect(fz,groundY-5,1.5,5);
+      cx.fillStyle="rgba(180,160,120,.9)";
+      cx.beginPath();cx.arc(bx-14,groundY-3,6,Math.PI,0);cx.closePath();cx.fill();
+    }else{
+      cx.fillStyle="#e8b83a";
+      for(let fz=bx-4;fz<bx+bw;fz+=14){cx.beginPath();cx.arc(fz,groundY-2,3,Math.PI,0);cx.closePath();cx.fill();}
+    }
+    // 进度条
+    cx.fillStyle="rgba(0,0,0,.5)";cx.fillRect(bx,groundY+7,bw,3.5);
+    cx.fillStyle="#f2c14e";cx.fillRect(bx,groundY+7,bw*prog,3.5);
+  });
+  // 城市光晕：GDP 越高（尤其一线），天际线越"灯火璀璨"
+  const glowA=clamp((S.gdp-200)/300,0,1)*0.5;
+  if(glowA>0.01){
+    const gx2=coastX*0.45,gy2=landTop+8;
+    const cg=cx.createRadialGradient(gx2,gy2,10,gx2,gy2,coastX*0.7);
+    cg.addColorStop(0,`rgba(255,214,120,${glowA})`);
+    cg.addColorStop(0.5,`rgba(255,190,90,${glowA*0.4})`);
+    cg.addColorStop(1,"rgba(255,190,90,0)");
+    cx.fillStyle=cg;cx.fillRect(0,0,w,h);
+  }
+  // 工业灰霾：污染越高，整座城市越灰蒙蒙（"结果"的直观呈现）
+  cx.fillStyle=`rgba(150,140,120,${clamp(p*0.32,0,0.32)})`;
+  cx.fillRect(0,0,w,h);
+  // 四角暗角：手绘插画的聚焦感
+  const vig=cx.createRadialGradient(w/2,h/2,h*0.45,w/2,h/2,Math.max(w,h)*0.75);
+  vig.addColorStop(0,"rgba(0,0,0,0)");
+  vig.addColorStop(1,"rgba(10,8,4,.26)");
+  cx.fillStyle=vig;cx.fillRect(0,0,w,h);
+}
+
+/* ---------------- 渲染：水下视角 ---------------- */
+function renderSea(t){
+  const w=W,h=H2;
+  if(w<=0||h<=0)return;
+  const p=S.pollution/100,cov=S.coverage/100;
+  // 水体：清澈蓝绿 → 富营养化绿 → 污染褐
+  let top=[86,196,190],bot=[10,80,95];
+  if(p>0.25)top=mixColor(top,[150,190,90],(p-0.25)*1.2);
+  if(p>0.25)bot=mixColor(bot,[60,95,55],(p-0.25)*1.2);
+  if(p>0.6){top=mixColor(top,[140,110,50],(p-0.6)*2.2);bot=mixColor(bot,[85,65,30],(p-0.6)*2.2);}
+  const g=sx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,rgb(mixColor(top,[255,255,255],0.12)));
+  g.addColorStop(0.35,rgb(top));
+  g.addColorStop(1,rgb(bot));
+  sx.fillStyle=g;sx.fillRect(0,0,w,h);
+  // 水面波光：表层粼粼反光（越浑浊越弱）
+  const surfA=clamp(0.32-p*0.28,0.03,0.32);
+  for(let i=0;i<7;i++){
+    const wy=h*(0.015+i*0.011);
+    const woff=Math.sin(t*1.8+i*1.9)*14;
+    sx.strokeStyle=`rgba(255,255,250,${surfA*(0.55+0.45*Math.sin(t*1.2+i*2.4))})`;
+    sx.lineWidth=1.6;
+    sx.beginPath();
+    sx.moveTo(w*0.05+woff,wy);
+    sx.quadraticCurveTo(w*0.3+woff,wy+3,w*0.55+woff,wy);
+    sx.quadraticCurveTo(w*0.75+woff,wy-3,w*0.95+woff,wy);
+    sx.stroke();
+  }
+  // 光束（光衰效果：越污染越暗，双层柔化边缘）
+  const lightA=clamp(0.14-p*0.13,0,0.14);
+  if(lightA>0.005){
+    sx.save();
+    for(let i=0;i<5;i++){
+      const lx=w*(0.12+i*0.19)+Math.sin(t*0.5+i)*16;
+      const aa=lightA*(0.6+0.4*Math.sin(t*0.8+i*1.7));
+      // 外层：宽而淡的光晕
+      sx.fillStyle=`rgba(255,255,240,${aa*0.35})`;
+      sx.beginPath();
+      sx.moveTo(lx-16,0);sx.lineTo(lx+16,0);sx.lineTo(lx+60,h);sx.lineTo(lx+8,h);
+      sx.closePath();sx.fill();
+      // 内层：亮核心
+      sx.fillStyle=`rgba(255,255,240,${aa})`;
+      sx.beginPath();
+      sx.moveTo(lx-8,0);sx.lineTo(lx+8,0);sx.lineTo(lx+46,h);sx.lineTo(lx+16,h);
+      sx.closePath();sx.fill();
+    }
+    sx.restore();
+  }
+  // 海床
+  const bedY=h*0.88;
+  sx.fillStyle=rgb(mixColor([190,170,120],[95,80,55],p));
+  sx.beginPath();sx.moveTo(0,h);
+  for(let x=0;x<=w;x+=40)sx.lineTo(x,bedY+Math.sin(x*0.01)*6);
+  sx.lineTo(w,h);sx.closePath();sx.fill();
+  // 沙底颗粒：细碎斑点质感
+  const speck=mulberry32(4242);
+  sx.fillStyle=p>0.5?"rgba(60,50,35,.25)":"rgba(120,100,65,.28)";
+  for(let i=0;i<60;i++){
+    const px2=speck()*w,py2=bedY+4+speck()*(h-bedY-4),pr=0.7+speck()*1.4;
+    sx.beginPath();sx.arc(px2,py2,pr,0,7);sx.fill();
+  }
+  // 岸线（画面右侧）：围填海把陆地向左推，直接掩埋海草——"起因"画在水下
+  const shoreFrac=clamp(0.05+S.totalReclaimed*0.006,0.05,0.38);
+  const shoreX=w*(1-shoreFrac);
+  // 自然滩涂 → 围填海硬质岸壁
+  const shoreCol=mixColor([196,176,126],[132,120,100],clamp(S.totalReclaimed/40,0,1));
+  sx.fillStyle=rgb(shoreCol);
+  sx.beginPath();sx.moveTo(shoreX-26,h);
+  sx.quadraticCurveTo(shoreX-4,bedY-14,shoreX+6,bedY-26);
+  sx.lineTo(w,bedY-26);sx.lineTo(w,h);sx.closePath();sx.fill();
+  // 岸上新建筑剪影（围填海越多越密）
+  sx.fillStyle="rgba(70,80,88,.55)";
+  const rS=mulberry32(31415);
+  for(let i=0;i<Math.round(S.totalReclaimed/3);i++){
+    const bw2=10+rS()*16,bh2=8+rS()*26;
+    sx.fillRect(w-(i+0.6)*bw2*1.5,bedY-26-bh2,bw2,bh2);
+  }
+  // 排污口：污染越高喷得越凶（养殖/生活污水的"起因"可视化）
+  const pipeY=bedY-20;
+  sx.strokeStyle="#4a4a48";sx.lineWidth=5;
+  sx.beginPath();sx.moveTo(shoreX+8,pipeY);sx.lineTo(shoreX-26,pipeY);sx.stroke();
+  if(S.pollution>12){
+    const inten=clamp((S.pollution-12)/80,0,1);
+    for(let i=0;i<9;i++){
+      const tt=(t*0.35+i/9)%1;
+      const px=shoreX-26-tt*w*0.3,py=pipeY-tt*h*0.13+Math.sin(tt*8+i*2)*7;
+      sx.fillStyle=`rgba(122,152,52,${(1-tt)*0.32*inten})`;
+      sx.beginPath();sx.arc(px,py,3+tt*17,0,7);sx.fill();
+    }
+  }
+  // 海草：按 thr 阈值存活 → 近岸先死、斑块状推进；枯死残留短茬
+  const stress=clamp((1-cov)*0.7+p*0.6,0,1);
+  const healthy=[38,150,72],sick=[150,150,60],dead=[100,80,48];
+  const bladeCol=stress<0.5?mixColor(healthy,sick,stress*2):mixColor(sick,dead,(stress-0.5)*2);
+  const hScale=0.55+0.45*cov;
+  for(const b of BLADES){
+    const bx=b.x*w;
+    if(bx>shoreX-6)continue; // 被围填海掩埋
+    if(b.thr>cov+0.14)continue; // 已死亡区域
+    const alive=b.thr<=cov;
+    const bx0=b.x*w,sway=Math.sin(t*1.4+b.phase)*10*b.bend;
+    if(!alive){
+      // 枯死残留：短、斜、褐
+      sx.strokeStyle="rgba(120,96,58,.8)";
+      sx.lineWidth=b.width*0.8;sx.lineCap="round";
+      sx.beginPath();sx.moveTo(bx0,bedY+4);
+      sx.lineTo(bx0+5,bedY-6);sx.stroke();
+      continue;
+    }
+    const bl=b.len*h*hScale;
+    sx.strokeStyle=rgb(bladeCol);
+    sx.lineWidth=b.width;
+    sx.lineCap="round";
+    sx.beginPath();
+    sx.moveTo(bx0,bedY+4);
+    sx.quadraticCurveTo(bx0+sway*0.4,bedY-bl*0.5,bx0+sway,bedY-bl);
+    sx.stroke();
+    // 受光面高光：左侧细亮线 → 叶片有体积感
+    sx.strokeStyle=rgb(mixColor(bladeCol,[220,255,200],0.45),0.55);
+    sx.lineWidth=Math.max(1,b.width*0.4);
+    sx.beginPath();
+    sx.moveTo(bx0-1.5,bedY+3);
+    sx.quadraticCurveTo(bx0+sway*0.4-1.5,bedY-bl*0.5,bx0+sway-1.5,bedY-bl*0.92);
+    sx.stroke();
+    // 附生藻类：污染高时叶片上出现深色小点
+    if(p>0.42){
+      sx.fillStyle=`rgba(60,90,30,${(p-0.42)*1.4})`;
+      for(let k=1;k<=3;k++){
+        const tt=k/4;
+        const ex=bx0+sway*tt,ey=bedY-bl*tt;
+        if(Math.sin(b.x*997+k*7.3)>0.2)sx.beginPath(),sx.arc(ex,ey,1.6,0,7),sx.fill();
+      }
+    }
+  }
+  // 斑块状退化提示：覆盖度低时画裸露沙斑
+  if(cov<0.45){
+    sx.fillStyle="rgba(120,100,70,.4)";
+    const spots=Math.round((0.45-cov)*30);
+    const r3=mulberry32(99);
+    for(let i=0;i<spots;i++){
+      sx.beginPath();
+      sx.ellipse(r3()*w*(1-shoreFrac),bedY+6+r3()*10,14+r3()*22,3+r3()*4,0,0,7);
+      sx.fill();
+    }
+  }
+  // 漂浮死鱼（污染严重时肚皮朝上）——"结果"可视化
+  if(p>0.5){
+    const nDead=Math.round((p-0.5)*14);
+    const r4=mulberry32(777);
+    for(let i=0;i<nDead;i++){
+      const fx=((r4()*w - t*(2+r4()*3))%(w+60)+w+60)%(w+60)-30;
+      const fy=h*(0.06+r4()*0.16)+Math.sin(t*0.8+i)*4;
+      sx.fillStyle="rgba(225,220,205,.85)";
+      sx.beginPath();sx.ellipse(fx,fy,6,2.4,0.06,0,7);sx.fill();
+      sx.beginPath();sx.moveTo(fx+5,fy);sx.lineTo(fx+10,fy-3);sx.lineTo(fx+10,fy+3);sx.closePath();sx.fill();
+    }
+  }
+  // 表层藻膜（富营养化）：绿色油膜随风漂
+  if(p>0.42){
+    const a=clamp((p-0.42)*0.5,0,0.3);
+    for(let i=0;i<4;i++){
+      const fy2=h*(0.04+i*0.015)+Math.sin(t*0.7+i*2)*3;
+      const fx2=((t*(6+i*3)+i*260)%(w+200))-100;
+      sx.fillStyle=`rgba(140,180,60,${a})`;
+      sx.beginPath();sx.ellipse(fx2,fy2,70+i*14,4,0,0,7);sx.fill();
+    }
+  }
+  // 鱼群（双色 + 尾鳍摆动）
+  for(const f of fishes){
+    const fx=f.x,fy=f.y*h,fs=f.size,dir=f.vx>0?1:-1;
+    const tail=Math.sin(t*8+f.x*0.1)*2.2;
+    const bodyC=mixColor([235,200,100],[130,120,108],p*0.7);
+    // 身体：纵向渐变（背深腹浅）
+    const fg2=sx.createLinearGradient(0,fy-fs*0.5,0,fy+fs*0.5);
+    fg2.addColorStop(0,rgb(mixColor(bodyC,[40,50,60],0.35)));
+    fg2.addColorStop(0.55,rgb(bodyC));
+    fg2.addColorStop(1,rgb(mixColor(bodyC,[255,255,240],0.55)));
+    sx.fillStyle=fg2;
+    sx.beginPath();
+    sx.ellipse(fx,fy,fs,fs*0.45,0,0,7);
+    sx.fill();
+    // 尾鳍
+    sx.fillStyle=rgb(mixColor(bodyC,[40,50,60],0.3));
+    sx.beginPath();
+    sx.moveTo(fx-dir*fs*0.9,fy);
+    sx.lineTo(fx-dir*(fs+5),fy-4+tail);
+    sx.lineTo(fx-dir*(fs+5),fy+4+tail);
+    sx.closePath();sx.fill();
+    // 眼睛
+    sx.fillStyle="rgba(20,24,28,.9)";
+    sx.beginPath();sx.arc(fx+dir*fs*0.55,fy-fs*0.1,Math.max(1,fs*0.09),0,7);sx.fill();
+  }
+  // 儒艮（渐变身体 + 浅色肚皮 + 鳍肢 + 气泡）
+  if(dugong.active){
+    const dx=dugong.x,dy=dugong.y*h;
+    const dir=dugong.vx>0?1:-1;
+    sx.save();
+    sx.translate(dx,dy);sx.scale(dir,1);
+    // 软阴影
+    sx.fillStyle="rgba(0,10,14,.18)";
+    sx.beginPath();sx.ellipse(0,26,44,7,0,0,7);sx.fill();
+    // 身体：纵向渐变
+    const dg=sx.createLinearGradient(0,-18,0,18);
+    dg.addColorStop(0,"#b7bfc3");
+    dg.addColorStop(0.55,"#98a2a8");
+    dg.addColorStop(1,"#7e8a90");
+    sx.fillStyle=dg;
+    sx.beginPath();
+    sx.ellipse(0,0,42,17,-0.12,0,7);sx.fill();
+    // 浅色肚皮
+    sx.fillStyle="rgba(225,228,226,.55)";
+    sx.beginPath();sx.ellipse(4,9,28,7,0.02,0,7);sx.fill();
+    // 尾巴（尾叶摆动）
+    const flip=Math.sin(t*2.6)*4;
+    sx.fillStyle="#8b959b";
+    sx.beginPath();
+    sx.moveTo(-38,-2);sx.lineTo(-58,-16+flip);sx.lineTo(-52,0);sx.lineTo(-58,14+flip);sx.closePath();sx.fill();
+    // 吻部
+    sx.fillStyle="#a6afb4";
+    sx.beginPath();sx.ellipse(40,4,10,6,0.3,0,7);sx.fill();
+    // 鳍肢
+    sx.beginPath();sx.ellipse(14,10,9,4.5,0.5,0,7);sx.fill();
+    // 背鳍
+    sx.beginPath();sx.moveTo(-8,-15);sx.lineTo(0,-24);sx.lineTo(8,-15);sx.closePath();sx.fill();
+    // 眼睛
+    sx.fillStyle="#333";sx.beginPath();sx.arc(26,-4,1.8,0,7);sx.fill();
+    // 吻部须点
+    sx.fillStyle="rgba(60,66,70,.5)";
+    for(let wi=0;wi<4;wi++)sx.beginPath(),sx.arc(42+wi*2.2,2+wi%2*3,0.7,0,7),sx.fill();
+    sx.restore();
+    // 上浮气泡
+    for(let bi=0;bi<3;bi++){
+      const bt=((t*0.5+bi*0.37)%1);
+      sx.strokeStyle=`rgba(230,250,250,${(1-bt)*0.4})`;
+      sx.lineWidth=1;
+      sx.beginPath();
+      sx.arc(dx+dir*34+Math.sin(bt*6+bi)*4,dy-14-bt*30,1.5+bt*2.5,0,7);
+      sx.stroke();
+    }
+    // 觅食时搅起底沙
+    if(S.coverage>50){
+      sx.fillStyle="rgba(200,180,130,.25)";
+      sx.beginPath();sx.arc(dx-dir*20,bedY,14,0,7);sx.fill();
+    }
+  }
+  // 悬浮物 / 污水羽流
+  for(const s of sediments){
+    sx.fillStyle=s.brown?`rgba(130,100,50,${s.life*0.3})`:`rgba(110,160,60,${s.life*0.28})`;
+    sx.beginPath();sx.arc(s.x,s.y*h,s.r,0,7);sx.fill();
+  }
+  // 整体光衰暗化
+  sx.fillStyle=`rgba(10,15,20,${p*0.22})`;
+  sx.fillRect(0,0,w,h);
+  // 四角暗角：深海纵深感
+  const vig2=sx.createRadialGradient(w/2,h*0.42,h*0.4,w/2,h*0.42,Math.max(w,h)*0.78);
+  vig2.addColorStop(0,"rgba(0,0,0,0)");
+  vig2.addColorStop(1,"rgba(2,8,12,.32)");
+  sx.fillStyle=vig2;sx.fillRect(0,0,w,h);
+}
+
+/* ---------------- 数据面板 ---------------- */
+let panelTick=0;
+function waterLevelText(){
+  const p=S.pollution;
+  if(p<10)return "清澈（I 类）";
+  if(p<30)return "轻度污染";
+  if(p<55)return "中度污染";
+  if(p<80)return "重度污染";
+  return "严重污染";
+}
+function bioLevelText(){
+  const c=S.coverage;
+  if(c>75)return "健康";
+  if(c>55)return "较健康";
+  if(c>35)return "下降";
+  if(c>15)return "严重下降";
+  return "崩溃";
+}
+function dugongText(){
+  if(S.dugongGone)return "已消失";
+  if(S.year>=1990||S.coverage<35)return "极稀少";
+  if(S.coverage<60)return "稀少";
+  return S.coverage<85?"常见":"频繁";
+}
+/* L0 趋势折线（sparkline）：key 取 history 字段；负值可跨越 0 线（如增速） */
+function sparkHTML(key,opts){
+  opts=opts||{};
+  const H=S.history;if(!H||H.length<2)return "";
+  const w=210,h=26,n=Math.min(H.length,80);
+  const data=H.slice(-n).map(d=>d[key]);
+  let mn=Math.min(...data),mx=Math.max(...data);
+  if(opts.min!==undefined)mn=Math.min(mn,opts.min);
+  if(opts.max!==undefined)mx=Math.max(mx,opts.max);
+  if(mx-mn<1e-6){mn-=1;mx+=1;}
+  const pad=2;
+  const pts=data.map((v,i)=>{
+    const x=i/(data.length-1)*w;
+    const y=pad+(h-pad*2)*(1-(v-mn)/(mx-mn));
+    return x.toFixed(1)+","+y.toFixed(1);
+  }).join(" ");
+  // 异常箭头：最近 8 个点（约 2 年）持续走低
+  let arrow="";
+  if(data.length>=8){
+    const rec=data.slice(-8);
+    if(rec[rec.length-1]<rec[0]-1e-6&&rec.every((v,i)=>i===0||v<=rec[i-1]+0.35))
+      arrow=`<span class="trendArrow lvBad">↓ 连续2年</span>`;
+  }
+  let zero="";
+  if(mn<0&&mx>0){
+    const zy=(pad+(h-pad*2)*(1-(0-mn)/(mx-mn))).toFixed(1);
+    zero=`<line class="sp-zero" x1="0" y1="${zy}" x2="${w}" y2="${zy}"/>`;
+  }
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    ${zero}<polyline class="sp-line" points="${pts}"/></svg>${arrow}`;
+}
+/* 最近约 2 年是否连续下滑（用于红色箭头） */
+function trendDown(key){
+  const H=S.history;if(H.length<8)return false;
+  const d=H.slice(-8).map(h=>h[key]);
+  return d[d.length-1]<d[0]&&d.every((v,i)=>i===0||v<=d[i-1]+0.35);
+}
+function updatePanel(){
+  updateBadge();
+  const inBuild=S.building.map(b=>{
+    const def=FACILITIES.find(d=>d.id===b.type);
+    return `<div class="building">🚧 ${def.icon} ${def.name}
+      <div class="bar"><i style="width:${clamp(b.done/b.years*100,0,100)}%"></i></div></div>`;
+  }).join("");
+  const gColor=S.gRate<1?"lvBad":S.gRate<2.5?"lvMid":"lvGood";
+  const gArrow=trendDown("g")?`<span class="trendArrow lvBad">↓</span>`:"";
+  const covColor=S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad";
+  $("panel").innerHTML=`
+    <h2>📅 时间</h2>
+    <div class="row"><span>当前年份</span><b>${formatYear()}</b></div>
+    <h2>🏙️ 城市指标</h2>
+    <div class="row"><span>年度增速</span><b class="${gColor}">${S.gRate.toFixed(1)}%${gArrow}</b></div>
+    ${sparkHTML("g",{min:-6,max:12})}
+    <div class="row"><span>GDP 指数</span><b>${Math.round(S.gdp)}</b><span style="font-size:10px;opacity:.6;">（1975=100）</span></div>
+    <div class="row"><span>经济总量</span><b>1975 年的 ${(S.gdp/100).toFixed(1)} 倍</b></div>
+    <div class="row"><span>市民满意度</span><b class="${S.satisfaction<60?"lvBad":S.satisfaction<75?"lvMid":"lvGood"}">${Math.round(S.satisfaction)}%${trendDown("sat")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
+    <div class="bar" id="barSat"><i style="width:${S.satisfaction}%"></i></div>
+    ${sparkHTML("sat",{min:20,max:100})}
+    <div class="row"><span>就业率</span><b>${Math.round(S.employment)}%${trendDown("emp")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
+    ${sparkHTML("emp",{min:50,max:99})}
+    <div class="row"><span>贸易指数</span><b>${Math.round(S.trade)}</b></div>
+    <div class="row"><span>财政预算</span><b>¥ ${Math.round(S.budget)} 亿</b></div>
+    <div class="row"><span>人口</span><b>${S.population.toFixed(1)} 万人</b></div>
+    ${inBuild?`<h2>🚧 在建工程</h2>${inBuild}`:""}
+    <h2>🌊 生态指标</h2>
+    <div class="row"><span>海草床覆盖度</span><b class="${covColor}">${S.coverage.toFixed(1)}%${trendDown("cov")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
+    <div class="bar" id="barCover"><i style="width:${S.coverage}%"></i></div>
+    ${sparkHTML("cov",{min:0,max:100})}
+    <div class="row"><span>水质等级</span><b class="${S.pollution<30?"lvGood":S.pollution<55?"lvMid":"lvBad"}">${waterLevelText()}${trendDown("pol")?'<span class="trendArrow lvBad">↓</span>':""}</b></div>
+    ${sparkHTML("pol",{min:0,max:100})}
+    <div class="row"><span>生物多样性</span><b class="${S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad"}">${bioLevelText()}</b></div>
+    <div class="row"><span>儒艮目击</span><b class="${S.dugongGone?"lvBad":S.coverage<60?"lvMid":"lvGood"}">${dugongText()}</b></div>
+    <h2>🏅 城市评级</h2>
+    <div class="row"><span>当前称号</span><b>${S.title?S.title.icon+" "+S.title.title:"—"}</b></div>
+    <div class="row"><span>最新综合得分</span><b>${S.lastReview?Math.round(S.lastReview.total)+" 分":"—"}</b></div>
+    <div class="row"><span>声望值</span><b>${S.prestige}</b></div>
+    ${S.ratBonus.funds?`<div class="row"><span>💰 评级拨款</span><b class="lvGood">+${S.ratBonus.funds}/年</b></div>`:""}
+    ${S.ratBonus.tax?`<div class="row"><span>🧾 环保税</span><b class="lvBad">-${S.ratBonus.tax}/年</b></div>`:""}
+    <button class="libBtn" onclick="openTitleHistory()">📜 城市发展历程</button>
+    <button class="libBtn" onclick="openArchiveLibrary()">🗂️ 决策档案库（${S.decisions.length}）</button>
+    <div class="row" style="margin-top:8px;font-size:10px;color:#9a927c;"><span>💡 提示</span></div>
+    <div style="font-size:10px;color:#9a927c;line-height:1.6;">点击水下视角的海草、儒艮，或城市的养殖场，可以发现隐藏知识。每 5 年进行一次城市评级（GDP×40% + 生态×40% + 平衡度×20%），称号与奖励随评级变化；长期三线停滞或生态崩溃将被调离岗位。</div>`;
+}
+function formatYear(){
+  const y=Math.floor(S.year);
+  if(y===2020&&S.year>=2020.46)return "2020年6月";
+  if(y===2023&&S.year>=2023.92)return "2023年12月";
+  return y+"年";
+}
+
+/* ---------------- 警告横幅 ---------------- */
+function updateBanner(){
+  const el=$("warnBanner");
+  let msg="";
+  // 三线城市滞留警告（连续 5 年时出现）
+  if(cityLevel()===3&&S.lowStreak>=5&&S.started&&!S.observer){
+    msg=`⚠️ 警告：城市发展停滞，请加快建设步伐（已停留在三线城市 ${Math.floor(S.lowStreak)} 年，再持续 ${Math.max(1,Math.ceil(10-S.lowStreak))} 年将被调离）`;
+  }
+  if(S.satisfaction<60)msg="⚠️ 市民满意度下降：市民期待更多就业与经济发展……";
+  if(S.coverage<25)msg="🌊 科学家警告：海草床退化严重！但声音在发展的喧嚣中十分微弱……";
+  if(S.coverage<8)msg="🚨 海草床几乎完全消失。修复，也许已经太迟……";
+  if(msg&&S.started&&!S.modalOpen){
+    if(el.textContent!==msg){
+      el.textContent=msg;el.style.display="block";sndWarn();
+    }
+  }else el.style.display="none";
+}
+
+/* ---------------- 控件 ---------------- */
+function updatePauseBtn(){
+  $("btnPause").textContent=S.paused?"▶ 继续":"⏸ 暂停";
+}
+$("btnPause").addEventListener("click",()=>{
+  if(!S.started||S.modalOpen)return;
+  S.paused=!S.paused;updatePauseBtn();
+});
+function setSpeed(v){
+  S.speed=v;
+  document.querySelectorAll(".ctrl.speed").forEach(b=>b.classList.toggle("active",+b.dataset.s===v));
+}
+document.querySelectorAll(".ctrl.speed").forEach(b=>{
+  b.addEventListener("click",()=>{if(S.started)setSpeed(+b.dataset.s);});
+});
+$("buildFab").addEventListener("click",()=>{
+  if(!S.started||S.modalOpen)return;
+  openBuildMenu();
+});
+$("btnAbout").addEventListener("click",showAbout);
+$("introAbout").addEventListener("click",e=>{
+  e.stopPropagation();
+  // intro 之上再弹一层
+  const ov=$("modalOverlay");ov.style.zIndex=100;
+  showAbout();
+  const obs=new MutationObserver(()=>{
+    if(!ov.classList.contains("show")){obs.disconnect();ov.style.zIndex=50;}
+  });
+  obs.observe(ov,{attributes:true,attributeFilter:["class"]});
+});
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"&&S.started&&!S.modalOpen){e.preventDefault();S.paused=!S.paused;updatePauseBtn();}
+  if(e.key==="1"&&S.started)setSpeed(1);
+  if(e.key==="2"&&S.started)setSpeed(5);
+  if(e.key==="3"&&S.started)setSpeed(10);
+});
+
+/* ---------------- 视角切换（单画面 + 按钮） ---------------- */
+let currentView="sea";
+function setView(v){
+  currentView=v;
+  // 内联样式 + class 双保险，避免嵌入环境样式表差异导致画布不显示
+  cityC.classList.toggle("active",v==="city");
+  seaC.classList.toggle("active",v==="sea");
+  cityC.style.display=v==="city"?"block":"none";
+  seaC.style.display=v==="sea"?"block":"none";
+  $("viewLabelCity").style.display=v==="city"?"block":"none";
+  $("viewLabelSea").style.display=v==="sea"?"block":"none";
+  $("viewToggle").textContent=v==="city"?"🌊 切换到水下视角":"🏙️ 切换到城市视角";
+  fit();
+}
+$("viewToggle").addEventListener("click",()=>setView(currentView==="city"?"sea":"city"));
+document.addEventListener("keydown",e=>{
+  if((e.key==="v"||e.key==="V")&&S.started&&!S.modalOpen)setView(currentView==="city"?"sea":"city");
+});
+
+/* ---------------- 启动 ---------------- */
+$("introBtn").addEventListener("click",()=>{
+  $("intro").style.display="none";
+  fit();sizeRO&&sizeRO.observe(stageEl);
+  setTimeout(fit,120);setTimeout(fit,600); // 布局稳定后再校准两次
+  S.started=true;S.running=true;S.paused=false;
+  performCityReview(true); // 1975 基准评级（静默）：初始化等级与称号
+  updatePauseBtn();
+  beep(523,0.2,"sine",0.08);setTimeout(()=>beep(659,0.3,"sine",0.08),150);
+  setTimeout(()=>showNews("🌊 1975年","近岸调查","本市近岸海域海草床广泛分布，儒艮栖息，渔业资源丰富。",7),1500);
+});
+fit();updatePanel();setView("sea");sizeRO&&sizeRO.observe(stageEl);
+requestAnimationFrame(t=>{lastT=t;loop(t);});
+</script>
+</body>
+</html>
