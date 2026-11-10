@@ -174,6 +174,11 @@
   #panel .hero .hSub{font-size:10px;color:#9a927c;line-height:1.5;}
   #panel .hero .bar{margin:5px 0 2px;}
   #panel .hero .spark{margin:4px 0 0;}
+  /* 年度变化徽标：本年度 ▲/▼ 变化量 */
+  .deltaBadge{display:inline-block;font-size:11px;margin-left:6px;padding:0 6px;border-radius:9px;
+    line-height:1.7;vertical-align:2px;font-weight:600;}
+  .deltaBadge.up{color:#5fd898;background:rgba(95,216,152,.14);}
+  .deltaBadge.down{color:#ff8a76;background:rgba(255,138,118,.14);}
 
   /* 底部时间线 */
   footer #yearLabel,footer #tlWrap{display:none;}
@@ -460,9 +465,9 @@ footer{
     <div id="tlCursor" data-page-node-id="64vvNhSNkSHDT1jVfz9P8j"></div>
   </div>
   <button class="ctrl" id="btnPause" data-page-node-id="Gp66CNSB2zq7v3WdmLWR4X">⏸ 暂停</button>
-  <button class="ctrl speed active" data-s="1" data-page-node-id="zBMfqarHhhqajFNGAwAe9K">▶ ×1</button>
+  <button class="ctrl speed" data-s="1" data-page-node-id="zBMfqarHhhqajFNGAwAe9K">▶ ×1</button>
   <button class="ctrl speed" data-s="2">⏩ ×2</button>
-  <button class="ctrl speed" data-s="5" data-page-node-id="L9MeGuF6wC4jDR4Dx4Mtf2">⏩ ×5</button>
+  <button class="ctrl speed active" data-s="5" data-page-node-id="L9MeGuF6wC4jDR4Dx4Mtf2">⏩ ×5</button>
   <button class="ctrl speed" data-s="10" data-page-node-id="C3VlD0cy8deyBH0Otz8Jjs">⏩ ×10</button>
 </footer>
 
@@ -481,7 +486,7 @@ footer{
       各部门、市民与组织会不时提出<b data-page-node-id="aDirIntro3">建议</b>：建港口、修虾塘、办园区、护海洋……<br data-page-node-id="aDirIntro4">
       你可以采纳，也可以<b data-page-node-id="aDirIntro5">完全忽略</b>——一切由你主导。<br data-page-node-id="aDirIntro6">
       GDP 决定城市的<b data-page-node-id="aDirIntro7">等级</b>：三线、二线、一线；长期停滞的三线城市，上级会调整领导班子。<br>
-      时间流速舒缓：1 年 = 5 分钟，城市会在你观察时自然生长、缓慢变化。<br><br>
+      默认 <b>5× 流速</b>（约 1 分钟 = 1 年），按 <b>1 / 2 / 3</b> 键可调快慢；每年年初会收到一份<b>经营简报</b>，城市的每一次变化都有回音。<br><br>
       你的每一个决策，都将影响这座城市和这片海洋的未来。
     </div>
     <button id="introBtn" data-page-node-id="hnpaRK73d7CoT6QMAhYH3B">开 始</button>
@@ -714,7 +719,7 @@ const SUGGESTION_POOL=[
 /* ---------------- 游戏状态 ---------------- */
 const S={
   started:false, running:false, paused:true, modalOpen:false,
-  speed:1, year:1975.0, endYear:2025,
+  speed:5, year:1975.0, endYear:2025,
   gdp:100, gRate:2.0,          // GDP 复利指数（1975=100）与当前年度增速
   trade:100, satisfaction:70, employment:75, population:25,
   satEq:70, empEq:75,          // 满意度/就业率的"均衡水位"
@@ -725,6 +730,8 @@ const S={
   boosts:[],            // 设施增速助推 {rate,total,remaining}
   history:[], histAcc:0,// L0 趋势采样 {y,g,sat,cov,pol,emp}
   lastBuildYear:1975,
+  lastReportYear:1975,   // 年度经营简报：已播报到的年份
+  yearSnap:null,         // 上次年报快照 {cov,sat,gdp}，供面板 ▲▼ 徽标
   dugongGone:false, dugongFinal:false,
   decisions:[],         // 决策档案库 {icon,name,rel,via}
   unlockedCases:{},     // 已解锁的真实案例
@@ -976,9 +983,14 @@ function simulate(dy){
   const rtNow=calculateCityRating();
   if(rtNow.total<40)S.under40Years+=dy;else S.under40Years=0;
   if(S.under40Years>=10&&!S.fired&&!S.observer&&!S.imbOver)showImbalanceOver();
+  // 年度经营简报：跨年瞬间触发
+  if(S.started&&Math.floor(S.year)>S.lastReportYear){
+    S.lastReportYear=Math.floor(S.year);
+    yearlyReport();
+  }
   updateFishes(dy);updateDugong(dy,S.year);updateSediment(dy);
 }
-function completeBuild(b){
+function completeBuild(b,silent){
   const def=FACILITIES.find(d=>d.id===b.type);
   S.facilities.push({type:b.type,year:Math.floor(S.year)});
   if(def.id!=="restore"){
@@ -991,6 +1003,13 @@ function completeBuild(b){
   S.trade+=def.trade;
   S.lastBuildYear=S.year;
   if(def.id==="reclamation")S.totalReclaimed+=12;
+  // 建成反馈：静默快讯播报实际效果（新手礼包等内部调用传 silent 跳过）
+  if(!silent){
+    const eff=[def.econText,def.ecoText].filter(Boolean).join(" · ");
+    showNotify({quiet:true,autoClose:6,
+      src:`✅ ${def.icon} ${def.name} 建成`,
+      body:eff||"已投入使用"});
+  }
   sndBuild();
 }
 
@@ -999,7 +1018,7 @@ let lastT=0;
 function loop(t){
   const dt=Math.min((t-lastT)/1000,0.1);lastT=t;
   if(S.started&&!S.paused&&!S.modalOpen){
-    // 时间流速：默认 1年 = 5 分钟（×2→2.5分/年，×5→1分/年，×10→30秒/年）
+    // 时间流速：默认 5×（1 年 = 1 分钟）；×1→5分/年，×2→2.5分/年，×10→30秒/年
     const dy=S.speed*dt/300;
     S.year+=dy;
     simulate(dy);
@@ -1242,7 +1261,8 @@ function showNotify(opts){
     <div class="nf-body">${opts.body||""}</div>`;
   const btns=document.createElement("div");
   btns.className="nf-btns";
-  if(opts.actions){
+  if(opts.quiet){/* 静默快讯：不显示按钮，仅自动消失 */}
+  else if(opts.actions){
     for(const a of opts.actions){
       const bd=document.createElement("button");
       bd.textContent=a.label;
@@ -1263,7 +1283,7 @@ function showNotify(opts){
     bc.addEventListener("click",()=>{card.remove();});
     btns.appendChild(bc);
   }
-  card.appendChild(btns);
+  if(!opts.quiet)card.appendChild(btns);
   wrap.prepend(card);
   while(wrap.children.length>3)wrap.lastChild.remove();
   setTimeout(()=>{if(card.parentNode)card.remove();},(opts.autoClose||8)*1000);
@@ -1278,6 +1298,26 @@ function closeDrawer(){$("drawer").classList.remove("show");}
 /* 新闻快讯也走 L1 通知通道（不打断游戏） */
 function showNews(src,sub,txt,secs){
   showNotify({src:src+(sub?" · "+sub:""),body:txt,autoClose:secs||8});
+}
+
+/* ---------------- 年度经营简报 ----------------
+   每跨一年推送一条静默快讯（无按钮、6 秒自动消失），
+   让玩家清楚看到"我这一年"发生了什么：增速 · 海草床变化 · 财政收支。 */
+function yearlyReport(){
+  const y=Math.floor(S.year);
+  const snap=S.yearSnap;
+  const dCov=snap?S.coverage-snap.cov:0;
+  const dSat=snap?S.satisfaction-snap.sat:0;
+  const net=40+S.gdp*0.25+S.ratBonus.funds-S.ratBonus.tax;
+  const covCls=S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad";
+  const gCls=S.gRate<1?"lvBad":S.gRate<2.5?"lvMid":"lvGood";
+  showNotify({quiet:true,autoClose:6,
+    src:`📊 ${y} 年经营简报`,
+    body:`增速 <b class="${gCls}">${S.gRate.toFixed(1)}%</b> · 海草床 <b class="${covCls}">${S.coverage.toFixed(1)}%</b>`+
+      (Math.abs(dCov)>=0.05?`<span class="deltaBadge ${dCov>=0?"up":"down"}">${dCov>=0?"▲":"▼"}${Math.abs(dCov).toFixed(1)}</span>`:"")+
+      ` · 财政 <b class="${net>=0?"lvGood":"lvBad"}">${net>=0?"+":""}${Math.round(net)} 亿</b>`+
+      (Math.abs(dSat)>=1?` · 满意度 <span class="${dSat>=0?"lvGood":"lvBad"}">${dSat>=0?"▲":"▼"}${Math.abs(dSat).toFixed(1)}</span>`:"")});
+  S.yearSnap={cov:S.coverage,sat:S.satisfaction,gdp:S.gdp};
 }
 
 /* ---------------- 决策档案库 ----------------
@@ -1864,6 +1904,9 @@ function tryBuild(id){
   S.building.push({type:id,done:0,years:f.years,slot:countFac(id)});
   recordDecision(f);   // 抉择即刻记录进档案库
   if(id==="restore")S.restoreInvested+=f.cost;
+  showNotify({quiet:true,autoClose:5,
+    src:`🏗️ ${f.icon} ${f.name} 开工`,
+    body:`投入 ¥${f.cost} 亿 · 工期 ${f.years} 年${f.warning?" · <span class=\"lvBad\">对海草床有生态代价</span>":""}`});
   beep(520,0.15,"sine",0.08);
   closeModalAndResume();
 }
@@ -2875,14 +2918,14 @@ function updatePanel(){
     <h2>🏙️ 城市指标</h2>
     <div class="row"><span>年度增速</span><b class="${gColor}">${S.gRate.toFixed(1)}%${gArrow}</b></div>
     ${sparkHTML("g",{min:-6,max:12})}
-    <div class="hero"><span class="hLabel">经济总量</span><b class="hVal">1975 年的 ${(S.gdp/100).toFixed(1)} 倍</b><span class="hSub">GDP ${Math.round(S.gdp)}</span></div>
+    <div class="hero"><span class="hLabel">经济总量</span><b class="hVal">1975 年的 ${(S.gdp/100).toFixed(1)} 倍${deltaBadge(S.gdp,S.yearSnap&&S.yearSnap.gdp,v=>"+"+Math.round(v))}</b><span class="hSub">GDP ${Math.round(S.gdp)}</span></div>
     <div class="row"><span>市民满意度</span><b class="${S.satisfaction<60?"lvBad":S.satisfaction<75?"lvMid":"lvGood"}">${Math.round(S.satisfaction)}%${trendDown("sat")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
     <div class="bar" id="barSat"><i style="width:${S.satisfaction}%"></i></div>
     ${sparkHTML("sat",{min:20,max:100})}
     <div class="hero gold"><span class="hLabel">💰 财政预算</span><b class="hVal ${budColor}">¥ ${Math.round(S.budget)} 亿</b><span class="hSub">年净收支 ${netYear>=0?"+":""}${Math.round(netYear)} 亿${S.budget<100?" · ⚠️ 资金紧张":""}</span></div>
     ${inBuild?`<h2>🚧 在建工程</h2>${inBuild}`:""}
     <h2>🌊 生态指标</h2>
-    <div class="hero"><span class="hLabel">🌊 海草床覆盖度</span><b class="hVal ${covColor}">${S.coverage.toFixed(1)}%${trendDown("cov")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b><div class="bar" id="barCover"><i style="width:${S.coverage}%"></i></div>${sparkHTML("cov",{min:0,max:100})}</div>
+    <div class="hero"><span class="hLabel">🌊 海草床覆盖度</span><b class="hVal ${covColor}">${S.coverage.toFixed(1)}%${deltaBadge(S.coverage,S.yearSnap&&S.yearSnap.cov)}${trendDown("cov")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b><div class="bar" id="barCover"><i style="width:${S.coverage}%"></i></div>${sparkHTML("cov",{min:0,max:100})}</div>
     <div class="row"><span>水质等级</span><b class="${S.pollution<30?"lvGood":S.pollution<55?"lvMid":"lvBad"}">${waterLevelText()}${trendDown("pol")?'<span class="trendArrow lvBad">↓</span>':""}</b></div>
     ${sparkHTML("pol",{min:0,max:100})}
     <div class="row"><span>生物多样性</span><b class="${S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad"}">${bioLevelText()}</b></div>
@@ -2903,6 +2946,13 @@ function formatYear(){
   if(y===2020&&S.year>=2020.46)return "2020年6月";
   if(y===2023&&S.year>=2023.92)return "2023年12月";
   return y+"年";
+}
+/* 年度变化徽标：对比上次年报快照，显示本年度变化量 */
+function deltaBadge(cur,prev,fmt){
+  if(!S.yearSnap||prev===undefined||prev===null)return "";
+  const d=cur-prev;
+  if(Math.abs(d)<0.05)return "";
+  return `<span class="deltaBadge ${d>=0?"up":"down"}">${d>=0?"▲":"▼"}${fmt?fmt(Math.abs(d)):""+Math.abs(d).toFixed(1)}</span>`;
 }
 
 /* ---------------- 警告横幅 ---------------- */
@@ -2984,7 +3034,7 @@ document.addEventListener("keydown",e=>{
    不破坏零操作生态平衡）+ 300 亿启动资金（见 S.budget 注释）。复用 completeBuild 走同一结算。 */
 function grantStarterPack(){
   for(const id of ["school","hospital","park"]){
-    completeBuild({type:id});   // year 记为 1975（开局既有）
+    completeBuild({type:id},true);   // year 记为 1975（开局既有）；silent：不弹建成快讯
   }
 }
 $("introBtn").addEventListener("click",()=>{
@@ -2998,6 +3048,7 @@ $("introBtn").addEventListener("click",()=>{
   beep(523,0.2,"sine",0.08);setTimeout(()=>beep(659,0.3,"sine",0.08),150);
   setTimeout(()=>showNews("🌊 1975年","近岸调查","本市近岸海域海草床广泛分布，儒艮栖息，渔业资源丰富。",7),1500);
   setTimeout(()=>showNews("🎁 新手礼包","前任市长交接","学校、医院、城市公园已建成（民生基础，零生态影响）；另拨 300 亿启动资金，当前预算 800 亿。规划下一项建设吧。",8),4300);
+  setTimeout(()=>showNews("💡 市长上手指南","","点击【建设】花钱发展城市；右下角 1×/5×/10× 可调时间流速（默认 5×，约 1 分钟 = 1 年）；每年年初有经营简报，建成项目会播报实际效果。",9),7000);
 });
 fit();updatePanel();setView("sea");sizeRO&&sizeRO.observe(stageEl);
 requestAnimationFrame(t=>{lastT=t;loop(t);});
