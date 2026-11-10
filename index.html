@@ -700,7 +700,7 @@ const S={
   trade:100, satisfaction:70, employment:75, population:25,
   satEq:70, empEq:75,          // 满意度/就业率的"均衡水位"
   satNoise:0, empNoise:0,      // 自然随机波动（区间内小幅摆动）
-  coverage:100, pollution:0, budget:500,
+  coverage:100, pollution:0, budget:800,  // 含 300 亿启动资金（新手礼包）
   facilities:[],        // 已完成 {type, year}
   building:[],          // {type, done}
   boosts:[],            // 设施增速助推 {rate,total,remaining}
@@ -2966,15 +2966,24 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------------- 启动 ---------------- */
+/* 新手礼包：开局自带民生三件套（学校/医院/城市公园，均为零污染零退化设施，
+   不破坏零操作生态平衡）+ 300 亿启动资金（见 S.budget 注释）。复用 completeBuild 走同一结算。 */
+function grantStarterPack(){
+  for(const id of ["school","hospital","park"]){
+    completeBuild({type:id});   // year 记为 1975（开局既有）
+  }
+}
 $("introBtn").addEventListener("click",()=>{
   $("intro").style.display="none";
   fit();sizeRO&&sizeRO.observe(stageEl);
   setTimeout(fit,120);setTimeout(fit,600); // 布局稳定后再校准两次
   S.started=true;S.running=true;S.paused=false;
+  grantStarterPack();
   performCityReview(true); // 1975 基准评级（静默）：初始化等级与称号
   updatePauseBtn();
   beep(523,0.2,"sine",0.08);setTimeout(()=>beep(659,0.3,"sine",0.08),150);
   setTimeout(()=>showNews("🌊 1975年","近岸调查","本市近岸海域海草床广泛分布，儒艮栖息，渔业资源丰富。",7),1500);
+  setTimeout(()=>showNews("🎁 新手礼包","前任市长交接","学校、医院、城市公园已建成（民生基础，零生态影响）；另拨 300 亿启动资金，当前预算 800 亿。规划下一项建设吧。",8),4300);
 });
 fit();updatePanel();setView("sea");sizeRO&&sizeRO.observe(stageEl);
 requestAnimationFrame(t=>{lastT=t;loop(t);});
