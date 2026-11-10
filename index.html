@@ -509,89 +509,89 @@ const sndDoom =()=>{beep(220,0.6,"sawtooth",0.05);setTimeout(()=>beep(165,0.8,"s
    satStep = 民生设施抬高的满意度"均衡水位"台阶 */
 const FACILITIES=[
  /* ===== 💼 纯经济建筑（对海草床影响极小或为零） ===== */
- {id:"commercial",name:"商业街区",icon:"🏪",cost:400,years:2,trade:3,emp:2,unlock:1980,
+ {id:"commercial",name:"商业街区",icon:"🏪",cost:400,years:2,trade:3,emp:2,
   instant:0.5,yearly:0.05,pollution:0.1,requires:null,eco:"mid",boost:1.8,boostYears:8,satStep:1,
   cat:"economic",vis:"cbd",econText:"增速 +1.8%/年（8 年）",ecoText:"发展零售、餐饮等服务业"},
- {id:"skyscraper",name:"摩天大楼",icon:"🏢",cost:800,years:3,trade:5,emp:2,unlock:1985,
+ {id:"skyscraper",name:"摩天大楼",icon:"🏢",cost:800,years:3,trade:5,emp:2,
   instant:1,yearly:0.1,pollution:0.1,requires:null,eco:"mid",boost:2.5,boostYears:10,satStep:1,
   cat:"economic",vis:"cbd",econText:"增速 +2.5%/年（10 年）",ecoText:"写字楼、总部经济"},
- {id:"hitech",name:"科技园区",icon:"💻",cost:1000,years:4,trade:10,emp:3,unlock:1995,
+ {id:"hitech",name:"科技园区",icon:"💻",cost:1000,years:4,trade:10,emp:3,
   instant:0.3,yearly:0.05,pollution:0.05,requires:["university"],eco:"good",boost:3.0,boostYears:10,satStep:1,
   cat:"economic",vis:"hitech",econText:"增速 +3%/年（10 年）",ecoText:"高新技术产业，清洁无污染（需先建大学城）"},
- {id:"finance",name:"金融中心",icon:"💰",cost:1500,years:5,trade:15,emp:2,unlock:2000,
+ {id:"finance",name:"金融中心",icon:"💰",cost:1500,years:5,trade:15,emp:2,
   instant:0,yearly:0,pollution:0,requires:["skyscraper","commercial"],minGDP:300,eco:"good",boost:3.5,boostYears:10,satStep:1,
   cat:"economic",vis:"cbd",econText:"增速 +3.5%/年（10 年）",ecoText:"银行、证券、保险，区域金融枢纽"},
- {id:"convention",name:"会展中心",icon:"🎪",cost:600,years:2,trade:10,emp:1,unlock:1990,
+ {id:"convention",name:"会展中心",icon:"🎪",cost:600,years:2,trade:10,emp:1,
   instant:0.5,yearly:0.05,pollution:0.1,requires:null,eco:"mid",boost:1.5,boostYears:7,satStep:1,
   cat:"economic",vis:"tourism",econText:"增速 +1.5%/年（7 年）",ecoText:"举办展会，提升城市知名度"},
- {id:"university",name:"大学城",icon:"🎓",cost:1200,years:5,trade:0,emp:2,unlock:1995,
-  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:1.0,boostYears:12,satStep:2,
+ {id:"university",name:"大学城",icon:"🎓",cost:1200,years:5,trade:0,emp:2,
+  instant:0,yearly:0,pollution:0,requires:["school"],eco:"good",boost:1.0,boostYears:12,satStep:2,
   cat:"economic",vis:"school",econText:"增速 +1%/年（12 年）· 培养人才",ecoText:"培养人才，长期收益"},
- {id:"cultural",name:"文化产业园",icon:"🎬",cost:500,years:2,trade:0,emp:1,unlock:2005,
-  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:1.2,boostYears:8,satStep:1,
+ {id:"cultural",name:"文化产业园",icon:"🎬",cost:500,years:2,trade:0,emp:1,
+  instant:0,yearly:0,pollution:0,requires:null,minGDP:200,eco:"good",boost:1.2,boostYears:8,satStep:1,
   cat:"economic",vis:"school",econText:"增速 +1.2%/年（8 年）",ecoText:"创意产业、影视基地"},
- {id:"tourism",name:"旅游设施",icon:"🏖️",cost:220,years:2,trade:0,emp:2,unlock:1990,
+ {id:"tourism",name:"旅游设施",icon:"🏖️",cost:220,years:2,trade:0,emp:2,
   instant:3,yearly:0.5,pollution:0.5,requires:null,eco:"mid",boost:1.2,boostYears:7,satStep:1,
   cat:"economic",vis:"tourism",econText:"增速 +1.2%/年（7 年）",ecoText:"岸线开发，影响相对较小"},
  /* ===== 🏗️ 基础设施（必要，但有一定环境影响） ===== */
- {id:"housing",name:"住宅区",icon:"🏘️",cost:300,years:2,trade:0,emp:1,unlock:1975,
+ {id:"housing",name:"住宅区",icon:"🏘️",cost:300,years:2,trade:0,emp:1,
   instant:1,yearly:0.3,pollution:0.3,requires:null,eco:"mid",boost:0.5,boostYears:6,satStep:3,
   cat:"infrastructure",vis:"housing",econText:"+人口容量 · +满意度",ecoText:"容纳更多人口"},
- {id:"road",name:"道路网络",icon:"🛣️",cost:200,years:1,trade:2,emp:1,unlock:1975,
+ {id:"road",name:"道路网络",icon:"🛣️",cost:200,years:1,trade:2,emp:1,
   instant:0.5,yearly:0,pollution:0.1,requires:null,eco:"mid",boost:0.4,boostYears:5,satStep:1,
   cat:"infrastructure",vis:"road",econText:"+交通效率",ecoText:"提升交通效率"},
- {id:"power",name:"电力设施",icon:"⚡",cost:500,years:2,trade:0,emp:1,unlock:1980,
+ {id:"power",name:"电力设施",icon:"⚡",cost:500,years:2,trade:0,emp:1,
   instant:2,yearly:0.5,pollution:0.5,requires:null,eco:"high",boost:1.2,boostYears:8,satStep:1,
   cat:"infrastructure",vis:"industry",econText:"增速 +1.2%/年（8 年）",ecoText:"为城市提供能源"},
- {id:"waterworks",name:"自来水厂",icon:"🚰",cost:400,years:2,trade:0,emp:1,unlock:1980,
+ {id:"waterworks",name:"自来水厂",icon:"🚰",cost:400,years:2,trade:0,emp:1,
   instant:1.5,yearly:0.3,pollution:0.3,requires:null,eco:"mid",boost:0.4,boostYears:6,satStep:3,
   cat:"infrastructure",vis:"school",econText:"+市民满意度",ecoText:"保障城市供水"},
- {id:"school",name:"学校",icon:"🏫",cost:100,years:1,trade:0,emp:1,unlock:1978,
+ {id:"school",name:"学校",icon:"🏫",cost:100,years:1,trade:0,emp:1,
   instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.2,boostYears:5,satStep:8,
   cat:"infrastructure",vis:"school",econText:"+满意度（民生）",ecoText:"无生态影响"},
- {id:"hospital",name:"医院",icon:"🏥",cost:130,years:1,trade:0,emp:1,unlock:1982,
+ {id:"hospital",name:"医院",icon:"🏥",cost:130,years:1,trade:0,emp:1,
   instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.2,boostYears:5,satStep:8,
   cat:"infrastructure",vis:"school",econText:"+满意度（民生）",ecoText:"无生态影响"},
- {id:"park",name:"城市公园",icon:"🌳",cost:80,years:1,trade:0,emp:0,unlock:1995,
+ {id:"park",name:"城市公园",icon:"🌳",cost:80,years:1,trade:0,emp:0,
   instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.1,boostYears:4,satStep:6,
   cat:"infrastructure",vis:"park",econText:"+满意度",ecoText:"无生态影响，还能固碳"},
- {id:"metro",name:"地铁",icon:"🚇",cost:400,years:3,trade:0,emp:1,unlock:2005,
-  instant:0.3,yearly:0.05,pollution:0.05,requires:null,eco:"mid",boost:0.6,boostYears:8,satStep:3,
+ {id:"metro",name:"地铁",icon:"🚇",cost:400,years:3,trade:0,emp:1,
+  instant:0.3,yearly:0.05,pollution:0.05,requires:["road"],eco:"mid",boost:0.6,boostYears:8,satStep:3,
   cat:"infrastructure",vis:"metro",econText:"增速 +0.6%/年 · +满意度",ecoText:"地下工程，影响极小"},
  /* ===== 🏭 高污染高收益（快速发展的捷径，代价巨大） ===== */
- {id:"reclamation",name:"围填海工程",icon:"🚧",cost:800,years:3,trade:0,emp:2,unlock:1975,
+ {id:"reclamation",name:"围填海工程",icon:"🚧",cost:800,years:3,trade:0,emp:2,
   instant:15,yearly:2,pollution:0.5,requires:null,eco:"severe",boost:1.5,boostYears:6,satStep:0,
   cat:"industrial",vis:"reclamation",econText:"+土地资源 · 助推增速",ecoText:"海草床被泥沙直接掩埋",warning:true},
- {id:"port",name:"深水港口",icon:"🚢",cost:1500,years:5,trade:25,emp:2,unlock:1980,
+ {id:"port",name:"深水港口",icon:"🚢",cost:1500,years:5,trade:25,emp:2,
   instant:12,yearly:1.5,pollution:0.5,requires:null,eco:"severe",boost:2.2,boostYears:10,satStep:0,
   cat:"industrial",vis:"port",econText:"增速 +2.2%/年（10 年）",ecoText:"航道开挖与岸线硬化",warning:true},
- {id:"farm",name:"虾塘 / 养殖场",icon:"🦐",cost:300,years:2,trade:0,emp:3,unlock:1975,
+ {id:"farm",name:"虾塘 / 养殖场",icon:"🦐",cost:300,years:2,trade:0,emp:3,
   instant:6,yearly:4,pollution:3.5,requires:null,eco:"severe",boost:1.8,boostYears:8,satStep:0,
   cat:"industrial",vis:"farm",econText:"增速 +1.8%/年（8 年）",ecoText:"富营养化逐年累积",warning:true},
- {id:"industry",name:"重工业区",icon:"🏭",cost:1000,years:3,trade:5,emp:3,unlock:1985,
+ {id:"industry",name:"重工业区",icon:"🏭",cost:1000,years:3,trade:5,emp:3,
   instant:8,yearly:3,pollution:2.5,requires:["port"],eco:"severe",boost:2.5,boostYears:10,satStep:0,
   cat:"industrial",vis:"industry",econText:"增速 +2.5%/年（10 年）",ecoText:"污染逐年累积",warning:true},
- {id:"chemical",name:"化工园区",icon:"🧪",cost:1200,years:4,trade:5,emp:3,unlock:1990,
+ {id:"chemical",name:"化工园区",icon:"🧪",cost:1200,years:4,trade:5,emp:3,
   instant:10,yearly:4,pollution:4,requires:["industry","port"],eco:"severe",boost:4.5,boostYears:10,satStep:0,
   cat:"industrial",vis:"industry",econText:"增速 +4.5%/年（10 年）",ecoText:"化工产业，极高收益极高污染",warning:true},
- {id:"dredge",name:"航道疏浚",icon:"⛏️",cost:500,years:1,trade:10,emp:1,unlock:1990,
-  instant:8,yearly:1,pollution:1,requires:null,eco:"high",boost:1.0,boostYears:5,satStep:0,
+ {id:"dredge",name:"航道疏浚",icon:"⛏️",cost:500,years:1,trade:10,emp:1,
+  instant:8,yearly:1,pollution:1,requires:["port"],eco:"high",boost:1.0,boostYears:5,satStep:0,
   cat:"industrial",vis:"dredge",econText:"+贸易 · 增速 +1%/年",ecoText:"水体悬浮物增加",warning:true},
  /* ===== 🌱 环保设施（减缓污染、修复生态，无直接经济收益） ===== */
- {id:"sewage",name:"污水处理厂",icon:"♻️",cost:2000,years:3,trade:0,emp:1,unlock:2000,
+ {id:"sewage",name:"污水处理厂",icon:"♻️",cost:2000,years:3,trade:0,emp:1,
   instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.2,boostYears:6,satStep:3,
   cat:"environmental",vis:"sewage",econText:"无直接收益（减缓 50% 污染影响）",ecoText:"治理见效慢，但生态正面"},
- {id:"monitoring",name:"环保监测站",icon:"📡",cost:500,years:1,trade:0,emp:1,unlock:2005,
+ {id:"monitoring",name:"环保监测站",icon:"📡",cost:500,years:1,trade:0,emp:1,
   instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0.1,boostYears:6,satStep:1,
   cat:"environmental",vis:"sewage",econText:"提供实时污染数据 · 每年削减少量污染",ecoText:"监管倒逼减排，生态正面"},
- {id:"wetland",name:"人工湿地",icon:"🌿",cost:1500,years:3,trade:0,emp:0,unlock:2010,
+ {id:"wetland",name:"人工湿地",icon:"🌿",cost:1500,years:3,trade:0,emp:0,
   instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:0,boostYears:0,satStep:3,
   cat:"environmental",vis:"park",econText:"无经济收益",ecoText:"净化水质，每年恢复 +1% 覆盖度（正面）"},
- {id:"fishingban",name:"禁渔区",icon:"🎣",cost:0,years:0.02,trade:0,emp:0,unlock:2015,
-  instant:0,yearly:0,pollution:0,requires:null,eco:"good",boost:-0.5,boostYears:10,satStep:1,
+ {id:"fishingban",name:"禁渔区",icon:"🎣",cost:0,years:0.02,trade:0,emp:0,
+  instant:0,yearly:0,pollution:0,requires:["monitoring"],eco:"good",boost:-0.5,boostYears:10,satStep:1,
   cat:"environmental",vis:"road",econText:"-5% GDP（政策成本）",ecoText:"减缓 30% 海洋生物压力（正面）"},
- {id:"restore",name:"海草床修复工程",icon:"🌱",cost:5000,years:5,trade:0,emp:1,unlock:2020.46,
-  instant:0,yearly:-2,pollution:0,requires:null,eco:"restore",boost:0,boostYears:0,satStep:2,
+ {id:"restore",name:"海草床修复工程",icon:"🌱",cost:5000,years:5,trade:0,emp:1,
+  instant:0,yearly:-2,pollution:0,requires:["sewage"],eco:"restore",boost:0,boostYears:0,satStep:2,
   cat:"environmental",vis:"restore",econText:"无经济收益",ecoText:"每年缓慢恢复 +2% 覆盖度（正面）"},
 ];
 const CATS={
@@ -1052,12 +1052,12 @@ function processEvents(){
     const ry=REVIEW_YEARS[S.reviewIdx++];
     performCityReview(ry>=S.endYear);
   }
-  // 2020.6 修复觉醒：L1 小通知告知解锁，建不建由玩家决定，不打断游戏
+  // 2020.6 修复觉醒：L1 小通知（修复工程本身由"污水处理厂"前置约束，非年份）
   if(!S.restoreNotified&&S.year>=2020.46){
     S.restoreNotified=true;
     showNotify({
       src:"🌿 修复觉醒",
-      body:"海草床修复工程已解锁——成本极高、每年仅恢复约 2% 覆盖度。是否投入，由你决定。",
+      body:"海草床修复技术走向成熟——先建成污水处理厂改善水质，即可启动修复工程。成本极高、每年仅恢复约 2% 覆盖度，是否投入由你决定。",
       autoClose:10
     });
     beep(660,0.12,"sine",0.05);
@@ -1073,7 +1073,7 @@ function fireSuggestion(){
     if(s.minGDP&&S.gdp<s.minGDP)return false;
     if(s.trigger&&!s.trigger())return false;
     const f=FACILITIES.find(d=>d.id===s.facility);
-    return f&&S.year>=f.unlock;
+    return !!f;
   });
   if(!pool.length)return;
   const s=pool[Math.floor(Math.random()*pool.length)];
@@ -1780,17 +1780,15 @@ function openBuildMenu(preselect){
     if(cat==="environmental")html+=`<div style="font-size:11px;color:#2f6d4f;margin:2px 0 6px;">无直接经济收益，用于减缓污染、修复生态。</div>`;
     html+=`<div class="facGrid">`;
     for(const f of list){
-      const locked=S.year<f.unlock;
       const noMoney=S.budget<f.cost;
       const rn=reqNames(f);
       const noReq=!reqOk(f);
       const noGDP=f.minGDP&&S.gdp<f.minGDP;
       const building=S.building.some(b=>b.type===f.id);
       const banned=S.ecoBanned&&(f.id==="industry"||f.id==="chemical");
-      const disabled=locked||noMoney||noReq||noGDP||building||banned;
+      const disabled=noMoney||noReq||noGDP||building||banned;
       let reason="";
       if(banned)reason=`<span class="reqTag">🚫 中央环保督察：暂停新增工业项目审批</span>`;
-      else if(locked)reason=`<span class="lockTag">🔒 ${f.id==="restore"?"2020 年修复觉醒后解锁":f.unlock+" 年后解锁"}</span>`;
       else if(building)reason=`<span class="lockTag">🚧 建设中</span>`;
       else if(noReq)reason=`<span class="reqTag">⚠️ 需要先建设：${rn}</span>`;
       else if(noGDP)reason=`<span class="reqTag">⚠️ 需要 GDP ≥ ${f.minGDP}（当前 ${Math.round(S.gdp)}）</span>`;
