@@ -155,6 +155,25 @@
   .lvGood{color:#5fd898;font-weight:600;}
   .lvMid{color:#ffd76a;font-weight:600;}
   .lvBad{color:#ff8a76;font-weight:600;}
+  /* 重点数据卡片：突出财政等核心指标 */
+  #panel .hero{
+    display:flex;flex-direction:column;gap:1px;
+    background:linear-gradient(135deg,rgba(126,200,177,.14),rgba(126,200,177,.04));
+    border:1px solid rgba(126,200,177,.35);border-radius:10px;
+    padding:8px 11px;margin:7px 0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  #panel .hero.gold{
+    background:linear-gradient(135deg,rgba(255,215,106,.14),rgba(255,215,106,.04));
+    border-color:rgba(255,215,106,.45);
+  }
+  #panel .hero .hLabel{font-size:10px;color:#9fc9b4;letter-spacing:1.5px;}
+  #panel .hero.gold .hLabel{color:#e8c66a;}
+  #panel .hero .hVal{font-size:19px;font-weight:700;line-height:1.35;}
+  #panel .hero .hVal .trendArrow{font-size:11px;}
+  #panel .hero .hSub{font-size:10px;color:#9a927c;line-height:1.5;}
+  #panel .hero .bar{margin:5px 0 2px;}
+  #panel .hero .spark{margin:4px 0 0;}
 
   /* 底部时间线 */
   footer #yearLabel,footer #tlWrap{display:none;}
@@ -2848,22 +2867,22 @@ function updatePanel(){
   const gColor=S.gRate<1?"lvBad":S.gRate<2.5?"lvMid":"lvGood";
   const gArrow=trendDown("g")?`<span class="trendArrow lvBad">↓</span>`:"";
   const covColor=S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad";
+  const netYear=40+S.gdp*0.25+S.ratBonus.funds-S.ratBonus.tax;
+  const budColor=S.budget<50?"lvBad":S.budget<150?"lvMid":"lvGood";
   $("panel").innerHTML=`
     <h2>📅 时间</h2>
     <div class="row"><span>当前年份</span><b>${formatYear()}</b></div>
     <h2>🏙️ 城市指标</h2>
     <div class="row"><span>年度增速</span><b class="${gColor}">${S.gRate.toFixed(1)}%${gArrow}</b></div>
     ${sparkHTML("g",{min:-6,max:12})}
-    <div class="row"><span>经济总量</span><b>1975 年的 ${(S.gdp/100).toFixed(1)} 倍</b><span style="font-size:10px;opacity:.6;">（GDP ${Math.round(S.gdp)}）</span></div>
+    <div class="hero"><span class="hLabel">经济总量</span><b class="hVal">1975 年的 ${(S.gdp/100).toFixed(1)} 倍</b><span class="hSub">GDP ${Math.round(S.gdp)}</span></div>
     <div class="row"><span>市民满意度</span><b class="${S.satisfaction<60?"lvBad":S.satisfaction<75?"lvMid":"lvGood"}">${Math.round(S.satisfaction)}%${trendDown("sat")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
     <div class="bar" id="barSat"><i style="width:${S.satisfaction}%"></i></div>
     ${sparkHTML("sat",{min:20,max:100})}
-    <div class="row"><span>财政预算</span><b>¥ ${Math.round(S.budget)} 亿</b></div>
+    <div class="hero gold"><span class="hLabel">💰 财政预算</span><b class="hVal ${budColor}">¥ ${Math.round(S.budget)} 亿</b><span class="hSub">年净收支 ${netYear>=0?"+":""}${Math.round(netYear)} 亿${S.budget<100?" · ⚠️ 资金紧张":""}</span></div>
     ${inBuild?`<h2>🚧 在建工程</h2>${inBuild}`:""}
     <h2>🌊 生态指标</h2>
-    <div class="row"><span>海草床覆盖度</span><b class="${covColor}">${S.coverage.toFixed(1)}%${trendDown("cov")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
-    <div class="bar" id="barCover"><i style="width:${S.coverage}%"></i></div>
-    ${sparkHTML("cov",{min:0,max:100})}
+    <div class="hero"><span class="hLabel">🌊 海草床覆盖度</span><b class="hVal ${covColor}">${S.coverage.toFixed(1)}%${trendDown("cov")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b><div class="bar" id="barCover"><i style="width:${S.coverage}%"></i></div>${sparkHTML("cov",{min:0,max:100})}</div>
     <div class="row"><span>水质等级</span><b class="${S.pollution<30?"lvGood":S.pollution<55?"lvMid":"lvBad"}">${waterLevelText()}${trendDown("pol")?'<span class="trendArrow lvBad">↓</span>':""}</b></div>
     ${sparkHTML("pol",{min:0,max:100})}
     <div class="row"><span>生物多样性</span><b class="${S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad"}">${bioLevelText()}</b></div>
