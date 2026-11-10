@@ -2854,16 +2854,11 @@ function updatePanel(){
     <h2>🏙️ 城市指标</h2>
     <div class="row"><span>年度增速</span><b class="${gColor}">${S.gRate.toFixed(1)}%${gArrow}</b></div>
     ${sparkHTML("g",{min:-6,max:12})}
-    <div class="row"><span>GDP 指数</span><b>${Math.round(S.gdp)}</b><span style="font-size:10px;opacity:.6;">（1975=100）</span></div>
-    <div class="row"><span>经济总量</span><b>1975 年的 ${(S.gdp/100).toFixed(1)} 倍</b></div>
+    <div class="row"><span>经济总量</span><b>1975 年的 ${(S.gdp/100).toFixed(1)} 倍</b><span style="font-size:10px;opacity:.6;">（GDP ${Math.round(S.gdp)}）</span></div>
     <div class="row"><span>市民满意度</span><b class="${S.satisfaction<60?"lvBad":S.satisfaction<75?"lvMid":"lvGood"}">${Math.round(S.satisfaction)}%${trendDown("sat")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
     <div class="bar" id="barSat"><i style="width:${S.satisfaction}%"></i></div>
     ${sparkHTML("sat",{min:20,max:100})}
-    <div class="row"><span>就业率</span><b>${Math.round(S.employment)}%${trendDown("emp")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
-    ${sparkHTML("emp",{min:50,max:99})}
-    <div class="row"><span>贸易指数</span><b>${Math.round(S.trade)}</b></div>
     <div class="row"><span>财政预算</span><b>¥ ${Math.round(S.budget)} 亿</b></div>
-    <div class="row"><span>人口</span><b>${S.population.toFixed(1)} 万人</b></div>
     ${inBuild?`<h2>🚧 在建工程</h2>${inBuild}`:""}
     <h2>🌊 生态指标</h2>
     <div class="row"><span>海草床覆盖度</span><b class="${covColor}">${S.coverage.toFixed(1)}%${trendDown("cov")?'<span class="trendArrow lvBad">↓ 连续2年</span>':""}</b></div>
