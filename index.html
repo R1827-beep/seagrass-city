@@ -1480,22 +1480,28 @@ function cityStatHtml(id){
    评级不暂停游戏：弹窗自动关闭，时间继续流逝；只有 Game Over 才真正暂停。
    ===================================================================== */
 const REVIEW_YEARS=[1980,1985,1990,1995,2000,2005,2010,2015,2020,2025];
-/* ---- 评分公式（严格按照设计公式，不得改动） ---- */
+/* ---- 评分公式（权重 40/40/20 与各档位阈值不变；档位间线性插值，
+        让治理措施的渐进成效能即时反映在分数上，而非 20 分一档的跳变） ---- */
+function _lerp(v,anchors){ /* anchors: [[x1,y1],[x2,y2],...] 升序 */
+  if(v<=anchors[0][0])return anchors[0][1];
+  for(let i=1;i<anchors.length;i++){
+    if(v<anchors[i][0]){
+      const [x0,y0]=anchors[i-1],[x1,y1]=anchors[i];
+      return y0+(y1-y0)*(v-x0)/(x1-x0);
+    }
+  }
+  return anchors[anchors.length-1][1];
+}
 function gdpScoreCalc(){
-  const g=S.gdp;
-  if(g<150)return 20;
-  if(g<250)return 40;
-  if(g<400)return 60;
-  if(g<600)return 80;
-  return 100;
+  // 锚点 = 原档位值：<150→20 · 150→40 · 250→60 · 400→80 · ≥600→100
+  return _lerp(S.gdp,[[150,40],[250,60],[400,80],[600,100]]);
 }
 function ecoScoreCalc(){
-  let s=0;const c=S.coverage;
-  if(c>=80)s=100;
-  else if(c>=60)s=80;
-  else if(c>=40)s=60;
-  else if(c>=20)s=40;
-  else s=20;
+  let s;
+  const c=S.coverage;
+  if(c<20)s=20;
+  // 锚点 = 原档位值：20→40 · 40→60 · 60→80 · ≥80→100
+  else s=_lerp(c,[[20,40],[40,60],[60,80],[80,100]]);
   // 额外加分：治污 / 修复 / 禁渔
   if(countFac("sewage")>0)s+=5;
   if(countFac("restore")>0)s+=10;
@@ -2942,7 +2948,13 @@ function updatePanel(){
     <div class="row"><span>儒艮目击</span><b class="${S.dugongGone?"lvBad":S.coverage<60?"lvMid":"lvGood"}">${dugongText()}</b></div>
     <h2>🏅 城市评级</h2>
     <div class="row"><span>当前称号</span><b>${S.title?S.title.icon+" "+S.title.title:"—"}</b></div>
-    <div class="row"><span>最新综合得分</span><b>${S.lastReview?Math.round(S.lastReview.total)+" 分":"—"}</b></div>
+    ${(()=>{
+      const rt=calculateCityRating();
+      const d=S.lastReview?rt.total-S.lastReview.total:null;
+      const nextRv=S.reviewIdx<REVIEW_YEARS.length?REVIEW_YEARS[S.reviewIdx]+" 年":"已完结";
+      return `<div class="hero"><span class="hLabel">📊 综合评估（实时）</span><b class="hVal">${Math.round(rt.total)} 分${d!==null&&Math.abs(d)>=0.5?`<span class="deltaBadge ${d>=0?"up":"down"}">${d>=0?"▲":"▼"}${Math.abs(d).toFixed(1)}</span>`:""}</b><span class="hSub">经济 ${Math.round(rt.gdp)} · 生态 ${Math.round(rt.eco)} · 平衡 ${Math.round(rt.balance)}　·　下次正式评级 ${nextRv}</span></div>`;
+    })()}
+    <div class="row"><span>上次正式评级</span><b>${S.lastReview?Math.round(S.lastReview.total)+" 分（"+lvlName(cityLevel())+"）":"—"}</b></div>
     <div class="row"><span>声望值</span><b>${S.prestige}</b></div>
     ${S.ratBonus.funds?`<div class="row"><span>💰 评级拨款</span><b class="lvGood">+${S.ratBonus.funds}/年</b></div>`:""}
     ${S.ratBonus.tax?`<div class="row"><span>🧾 环保税</span><b class="lvBad">-${S.ratBonus.tax}/年</b></div>`:""}
