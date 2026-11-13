@@ -314,6 +314,20 @@ footer{
     box-shadow:0 10px 30px rgba(87,180,143,.6),0 0 44px rgba(143,216,184,.35);}
   #intro .note{margin-top:22px;font-size:11px;opacity:.5;}
   #intro .note a{color:#8fd8b8;cursor:pointer;text-decoration:underline;}
+  /* 年龄段选择 */
+  #agePick{margin:-14px 0 26px;text-align:center;}
+  #agePick .ageTitle{font-size:13px;color:#8fd8b8;letter-spacing:2px;margin-bottom:12px;}
+  #agePick .ageGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  #agePick .ageCard{
+    background:rgba(255,255,255,.05);border:1px solid rgba(143,216,184,.25);border-radius:12px;
+    padding:12px 6px 10px;cursor:pointer;color:#eaf5ef;transition:all .15s;
+  }
+  #agePick .ageCard:hover{border-color:rgba(143,216,184,.6);background:rgba(143,216,184,.08);}
+  #agePick .ageCard.sel{background:rgba(143,216,184,.16);border-color:#8fd8b8;
+    box-shadow:0 0 18px rgba(143,216,184,.25);}
+  #agePick .ageCard b{display:block;font-size:16px;margin-bottom:4px;}
+  #agePick .ageCard span{display:block;font-size:12px;color:#8fd8b8;margin-bottom:5px;}
+  #agePick .ageCard i{display:block;font-size:10px;opacity:.65;font-style:normal;line-height:1.5;}
 
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:rgba(126,200,177,.35);border-radius:4px;}
@@ -487,9 +501,19 @@ footer{
       你可以采纳，也可以<b data-page-node-id="aDirIntro5">完全忽略</b>——一切由你主导。<br data-page-node-id="aDirIntro6">
       GDP 决定城市的<b data-page-node-id="aDirIntro7">等级</b>：三线、二线、一线；长期停滞的三线城市，上级会调整领导班子。<br>
       默认 <b>5× 流速</b>（约 1 分钟 = 1 年），按 <b>1 / 2 / 3</b> 键可调快慢；每年年初会收到一份<b>经营简报</b>，城市的每一次变化都有回音。<br><br>
-      你的每一个决策，都将影响这座城市和这片海洋的未来。
+      你的每一个决策，都将影响这座城市和这片海洋的未来。<br><br>
+      <b>🧭 分龄难度</b>：在下方选择你的年龄段，程序会自动匹配对应的挑战强度——年龄越小，困难逻辑越少：低年龄段没有失败惩罚、收入更充裕、海洋会温柔地自我修复，专注体验"发展 vs 保护"的故事；年龄越大，财政压力、评级考核与调离机制越完整。
     </div>
-    <button id="introBtn" data-page-node-id="hnpaRK73d7CoT6QMAhYH3B">开 始</button>
+    <div id="agePick">
+      <div class="ageTitle">选择你的年龄段 · 匹配合适难度</div>
+      <div class="ageGrid">
+        <button class="ageCard" data-age="kid"><b>6-9 岁</b><span>启蒙模式</span><i>无失败惩罚 · 收入充裕 · 海洋自愈</i></button>
+        <button class="ageCard" data-age="teen"><b>10-12 岁</b><span>少年模式</span><i>无失败惩罚 · 收入加成 · 生态自愈</i></button>
+        <button class="ageCard" data-age="youth"><b>13-15 岁</b><span>青少年模式</span><i>完整规则 · 容忍放宽 · 小加成</i></button>
+        <button class="ageCard sel" data-age="adult"><b>16 岁+</b><span>标准模式</span><i>完整挑战 · 评级与调离全生效</i></button>
+      </div>
+    </div>
+    <button id="introBtn" data-page-node-id="hnpaRK73d7CoT6QMAhYH3B">开 始 · 标准模式</button>
     <div class="note" data-page-node-id="eP8FAaCrQHfAz5TH9yFLAF">本作品为严肃生态教育互动体验 · 历史案例数据真实 · 模拟数值为教育演示推演 · 右上角按钮可切换城市/水下视角（快捷键 V） · <a id="introAbout" data-page-node-id="RtfPFalvpupFNGkQVAAl3y">查看数据说明</a></div>
   </div>
 </div>
@@ -757,6 +781,20 @@ const S={
   suggestCd:1200, suggestCount:0, suggestedIds:{}, ecoMsgYear:0,
   eventQueue:[],
 };
+/* ---------------- 分龄难度（开场选择年龄段，程序匹配挑战强度） ----------------
+   incomeMul 财政收入倍数 · ecoCare 海洋自愈韧性(覆盖度/年) · kills 是否启用调离/崩溃
+   Game Over · killMul 斩杀线容忍倍数（低龄减少困难逻辑，专注体验发展 vs 保护的故事） */
+const AGE_MODES={
+  kid:  {name:"启蒙模式",years:"6-9 岁",incomeMul:1.6,ecoCare:0.4,kills:false,killMul:2,
+         desc:"没有失败惩罚 · 收入更充裕 · 海洋更有韧性"},
+  teen: {name:"少年模式",years:"10-12 岁",incomeMul:1.35,ecoCare:0.25,kills:false,killMul:2,
+         desc:"没有失败惩罚 · 收入加成 · 生态自愈"},
+  youth:{name:"青少年模式",years:"13-15 岁",incomeMul:1.15,ecoCare:0.1,kills:true,killMul:1.6,
+         desc:"完整规则 · 失败容忍放宽 60% · 收入小加成"},
+  adult:{name:"标准模式",years:"16 岁及以上",incomeMul:1,ecoCare:0,kills:true,killMul:1,
+         desc:"完整挑战：财政、评级、调离、生态崩盘全部生效"},
+};
+function diff(){return AGE_MODES[S.ageMode]||AGE_MODES.adult;}
 /* 城市等级：三线 <200 / 二线 200-500 / 一线 ≥500（基于 GDP，1975=100） */
 function cityLevel(){return S.gdp>=500?1:S.gdp>=200?2:3;}
 function lvlName(lv){return lv===1?"一线城市":lv===2?"二线城市":"三线城市";}
@@ -937,8 +975,8 @@ function simulate(dy){
     const b=S.boosts[i];b.remaining-=dy;
     if(b.remaining<=0)S.boosts.splice(i,1);
   }
-  // 财政收入随经济体量增长（0.45 系数保证港口/金融中心等进阶建筑可达）+ 评级拨款 − 环保税
-  S.budget+=(40+S.gdp*0.45+S.ratBonus.funds-S.ratBonus.tax)*dy;
+  // 财政收入随经济体量增长（0.45 系数保证港口/金融中心等进阶建筑可达）+ 评级拨款 − 环保税（低龄模式收入加成）
+  S.budget+=(40+S.gdp*0.45+S.ratBonus.funds-S.ratBonus.tax)*diff().incomeMul*dy;
   // ---- 生态 ----
   // 污水处理厂减缓污染影响（每个减 50%，最多两个即 75%）
   const sewageN=Math.min(2,S.facilities.filter(f=>f.type==="sewage").length);
@@ -971,6 +1009,8 @@ function simulate(dy){
   S.pollution=Math.max(0,S.pollution-S.pollution*0.025*dy);
   // 清洁水域中海草床缓慢自然恢复（水质好时海草有自我修复能力）
   if(S.pollution<25)S.coverage=Math.min(100,S.coverage+0.3*dy);
+  // 分龄韧性：低龄模式海洋自我修复更强（生态兜底，专注体验故事）
+  if(S.pollution<60)S.coverage=Math.min(100,S.coverage+diff().ecoCare*dy);
   S.coverage=Math.max(0.4,S.coverage);
   S.pollution=Math.min(100,S.pollution);
   // 在建工程
@@ -1016,17 +1056,26 @@ function simulate(dy){
     else if(S.coverage<10){S.ecoMsgYear=S.year;showNews("⚠️ 海洋生态恶化","旅游业下滑","滨海旅游收入明显下滑，市民开始怀念那片海草床。",8);}
     else if(S.coverage<20){S.ecoMsgYear=S.year;showNews("⚠️ 渔业资源枯竭","相关产业受损","近岸渔获量逐年锐减，靠海吃饭的行业开始受损。",8);}
   }
-  // 城市等级滞留计时：连续停留在三线城市
+  // 城市等级滞留计时：连续停留在三线城市（低龄模式不触发调离，改为温柔鼓励）
+  const dif=diff();
   if(cityLevel()===3){
     S.lowStreak+=dy;
-    if(S.lowStreak>=10&&S.gdp<150&&!S.fired&&!S.observer)showGameOver();
-  }else S.lowStreak=0;
+    if(dif.kills){
+      if(S.lowStreak>=10*dif.killMul&&S.gdp<150&&!S.fired&&!S.observer)showGameOver();
+    }else if(S.lowStreak>=10&&!S.encouraged){
+      S.encouraged=true;
+      showNotify({quiet:true,autoClose:9,
+        src:"💡 市长加油",
+        body:"城市收入还可以再进一步——试试建设商业街区或会展中心，让 GDP 冲过 150 亿升级二线城市！"});
+    }
+  }else{S.lowStreak=0;S.encouraged=false;}
   // Game Over 斩杀线：生态灾难（覆盖度<5% 持续 3 年）/ 严重失衡（<40 分持续 10 年）
+  // 低龄模式完全关闭；青少年模式容忍度 ×1.6
   if(S.coverage<5)S.under5Years+=dy;else S.under5Years=0;
-  if(S.under5Years>=3&&!S.fired&&!S.observer&&!S.ecoOver)showEcoDisaster();
+  if(dif.kills&&S.under5Years>=3*dif.killMul&&!S.fired&&!S.observer&&!S.ecoOver)showEcoDisaster();
   const rtNow=calculateCityRating();
   if(rtNow.total<40)S.under40Years+=dy;else S.under40Years=0;
-  if(S.under40Years>=10&&!S.fired&&!S.observer&&!S.imbOver)showImbalanceOver();
+  if(dif.kills&&S.under40Years>=10*dif.killMul&&!S.fired&&!S.observer&&!S.imbOver)showImbalanceOver();
   // 年度经营简报：跨年瞬间触发
   if(S.started&&Math.floor(S.year)>S.lastReportYear){
     S.lastReportYear=Math.floor(S.year);
@@ -1355,7 +1404,7 @@ function yearlyReport(){
   const snap=S.yearSnap;
   const dCov=snap?S.coverage-snap.cov:0;
   const dSat=snap?S.satisfaction-snap.sat:0;
-  const net=40+S.gdp*0.45+S.ratBonus.funds-S.ratBonus.tax;
+  const net=(40+S.gdp*0.45+S.ratBonus.funds-S.ratBonus.tax)*diff().incomeMul;
   const covCls=S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad";
   const gCls=S.gRate<1?"lvBad":S.gRate<2.5?"lvMid":"lvGood";
   showNotify({quiet:true,autoClose:6,
@@ -3012,11 +3061,12 @@ function updatePanel(){
   const gColor=S.gRate<1?"lvBad":S.gRate<2.5?"lvMid":"lvGood";
   const gArrow=trendDown("g")?`<span class="trendArrow lvBad">↓</span>`:"";
   const covColor=S.coverage>55?"lvGood":S.coverage>25?"lvMid":"lvBad";
-  const netYear=40+S.gdp*0.45+S.ratBonus.funds-S.ratBonus.tax;
+  const netYear=(40+S.gdp*0.45+S.ratBonus.funds-S.ratBonus.tax)*diff().incomeMul;
   const budColor=S.budget<50?"lvBad":S.budget<150?"lvMid":"lvGood";
   $("panel").innerHTML=`
     <h2>📅 时间</h2>
     <div class="row"><span>当前年份</span><b>${formatYear()}</b></div>
+    <div class="row"><span>难度模式</span><b>${diff().years} · ${diff().name}</b></div>
     <h2>🏙️ 城市指标</h2>
     <div class="row"><span>年度增速</span><b class="${gColor}">${S.gRate.toFixed(1)}%${gArrow}</b></div>
     ${sparkHTML("g",{min:-6,max:12})}
@@ -3067,10 +3117,12 @@ function deltaBadge(cur,prev,fmt){
 function updateBanner(){
   const el=$("warnBanner");
   let msg="";
-  // 三线城市滞留警告（连续 5 年时出现；调离实际条件 = GDP<150 亿，横幅如实告知）
+  // 三线城市滞留警告（连续 5 年时出现；调离实际条件 = GDP<150 亿，横幅如实告知；低龄模式改为温柔鼓励）
   if(cityLevel()===3&&S.lowStreak>=5&&S.started&&!S.observer){
-    msg=S.gdp<150
-      ?`⚠️ 警告：城市发展停滞（三线滞留 ${Math.floor(S.lowStreak)} 年）。GDP 低于 150 亿的状态再持续 ${Math.max(1,Math.ceil(10-S.lowStreak))} 年将被调离——优先建设商业街区、会展中心等经济建筑提升增速！`
+    if(!diff().kills){
+      msg=`💡 小提示：城市在三线阶段已经停留 ${Math.floor(S.lowStreak)} 年啦——建设【商业街区】或【会展中心】可以提高收入，冲过 200 亿就能升级二线城市！`;
+    }else msg=S.gdp<150
+      ?`⚠️ 警告：城市发展停滞（三线滞留 ${Math.floor(S.lowStreak)} 年）。GDP 低于 150 亿的状态再持续 ${Math.max(1,Math.ceil(10*diff().killMul-S.lowStreak))} 年将被调离——优先建设商业街区、会展中心等经济建筑提升增速！`
       :`⚠️ 三线滞留 ${Math.floor(S.lowStreak)} 年 · 当前 GDP ${Math.round(S.gdp)} 亿（≥150 亿，暂无调离风险）——冲刺 200 亿即可升级二线城市！`;
   }
   if(S.satisfaction<60)msg="⚠️ 市民满意度下降：市民期待更多就业与经济发展……";
@@ -3147,7 +3199,18 @@ function grantStarterPack(){
     completeBuild({type:id},true);   // year 记为 1975（开局既有）；silent：不弹建成快讯
   }
 }
+/* 年龄段选择：默认标准模式，点选卡片即时切换难度 */
+document.querySelectorAll("#agePick .ageCard").forEach(card=>{
+  card.addEventListener("click",()=>{
+    document.querySelectorAll("#agePick .ageCard").forEach(c=>c.classList.remove("sel"));
+    card.classList.add("sel");
+    S.ageMode=card.dataset.age;
+    $("introBtn").textContent=`开 始 · ${diff().name}`;
+    beep(660,0.08,"sine",0.05);
+  });
+});
 $("introBtn").addEventListener("click",()=>{
+  if(!S.ageMode)S.ageMode="adult";
   $("intro").style.display="none";
   fit();sizeRO&&sizeRO.observe(stageEl);
   setTimeout(fit,120);setTimeout(fit,600); // 布局稳定后再校准两次
