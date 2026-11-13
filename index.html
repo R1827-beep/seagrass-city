@@ -299,7 +299,7 @@ footer{
   }
   #intro .inner{max-width:620px;padding:24px 32px;text-align:center;margin:auto;
     background:rgba(255,255,255,.03);border:1px solid rgba(143,216,184,.18);border-radius:18px;
-    box-shadow:0 30px 90px rgba(0,0,0,.55);backdrop-filter:blur(4px);}
+    box-shadow:0 30px 90px rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
   #intro h1{font-size:27px;letter-spacing:3px;margin-bottom:6px;
     text-shadow:0 0 24px rgba(143,216,184,.45);}
   #intro .en{font-size:11px;opacity:.55;letter-spacing:4px;margin-bottom:16px;}
@@ -319,12 +319,18 @@ footer{
   #agePick .ageTitle{font-size:13px;color:#8fd8b8;letter-spacing:2px;margin-bottom:10px;}
   #agePick .ageGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:9px;}
   #agePick .ageCard{
+    position:relative;
     background:rgba(255,255,255,.05);border:1px solid rgba(143,216,184,.25);border-radius:12px;
-    padding:10px 6px 8px;cursor:pointer;color:#eaf5ef;transition:all .15s;
+    padding:10px 6px 8px;cursor:pointer;color:#eaf5ef;transition:background .15s,border-color .15s;
+    font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
   }
   #agePick .ageCard:hover{border-color:rgba(143,216,184,.6);background:rgba(143,216,184,.08);}
   #agePick .ageCard.sel{background:rgba(143,216,184,.16);border-color:#8fd8b8;
     box-shadow:0 0 18px rgba(143,216,184,.25);}
+  #agePick .ageCard.sel::after{content:"✓";position:absolute;top:-8px;right:-8px;
+    width:20px;height:20px;border-radius:50%;background:#8fd8b8;color:#04231a;
+    font-size:12px;font-weight:700;line-height:20px;text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.4);}
   #agePick .ageCard b{display:block;font-size:15px;margin-bottom:3px;}
   #agePick .ageCard span{display:block;font-size:11.5px;color:#8fd8b8;margin-bottom:4px;}
   #agePick .ageCard i{display:block;font-size:10px;opacity:.65;font-style:normal;line-height:1.45;}
@@ -496,13 +502,13 @@ footer{
       你是这座沿海城市的管理者。<br data-page-node-id="DWGTAbzYdG44DR6zVYXW8Q">
       此时，近岸海域的<em data-page-node-id="cCt3fDWaMuBSCPFKL8UkUA">海草床</em>广泛分布，<em data-page-node-id="iNXldD4jBSlclcCIuXVgJL">儒艮</em>在此栖息。<br data-page-node-id="cTuBrxdEL9dFirnd0HmByY">
       但时代即将改变，发展的浪潮即将到来……<br data-page-node-id="DIu0OshbwTQKDfVr0sFpKW"><br data-page-node-id="eI0pqZD8Zl5ooaw9psgdb8">
-      <b data-page-node-id="aDirIntro1">这是一座虚构的沿海城市——没有固定的发展路线，也没有标准答案。</b><br data-page-node-id="aDirIntro2">
-      各部门、市民与组织会不时提出<b data-page-node-id="aDirIntro3">建议</b>：建港口、修虾塘、办园区、护海洋……<br data-page-node-id="aDirIntro4">
-      你可以采纳，也可以<b data-page-node-id="aDirIntro5">完全忽略</b>——一切由你主导。<br data-page-node-id="aDirIntro6">
-      GDP 决定城市的<b data-page-node-id="aDirIntro7">等级</b>：三线、二线、一线；长期停滞的三线城市，上级会调整领导班子。<br>
-      默认 <b>5× 流速</b>（约 1 分钟 = 1 年），按 <b>1 / 2 / 3</b> 键可调快慢；每年年初会收到一份<b>经营简报</b>，城市的每一次变化都有回音。<br><br>
+      <em data-page-node-id="aDirIntro1">这是一座虚构的沿海城市——没有固定的发展路线，也没有标准答案。</em><br data-page-node-id="aDirIntro2">
+      各部门、市民与组织会不时提出<em data-page-node-id="aDirIntro3">建议</em>：建港口、修虾塘、办园区、护海洋……<br data-page-node-id="aDirIntro4">
+      你可以采纳，也可以<em data-page-node-id="aDirIntro5">完全忽略</em>——一切由你主导。<br data-page-node-id="aDirIntro6">
+      GDP 决定城市的<em data-page-node-id="aDirIntro7">等级</em>：三线、二线、一线；长期停滞的三线城市，上级会调整领导班子。<br>
+      默认 <em>5× 流速</em>（约 1 分钟 = 1 年），按 <em>1 / 2 / 3</em> 键可调快慢；每年年初会收到一份<em>经营简报</em>，城市的每一次变化都有回音。<br><br>
       你的每一个决策，都将影响这座城市和这片海洋的未来。<br><br>
-      <b>🧭 分龄难度</b>：在下方选择你的年龄段，程序会自动匹配对应的挑战强度——年龄越小，困难逻辑越少：低年龄段没有失败惩罚、收入更充裕、海洋会温柔地自我修复，专注体验"发展 vs 保护"的故事；年龄越大，财政压力、评级考核与调离机制越完整。
+      <em>🧭 分龄难度</em>：在下方选择你的年龄段，程序会自动匹配对应的挑战强度——年龄越小，困难逻辑越少：低年龄段没有失败惩罚、收入更充裕、海洋会温柔地自我修复，专注体验"发展 vs 保护"的故事；年龄越大，财政压力、评级考核与调离机制越完整。
     </div>
     <div id="agePick">
       <div class="ageTitle">选择你的年龄段 · 匹配合适难度</div>
@@ -3066,7 +3072,7 @@ function updatePanel(){
   $("panel").innerHTML=`
     <h2>📅 时间</h2>
     <div class="row"><span>当前年份</span><b>${formatYear()}</b></div>
-    <div class="row"><span>难度模式</span><b>${diff().years} · ${diff().name}</b></div>
+    <div class="row" id="diffRow" style="cursor:pointer" title="点击切换难度模式"><span>难度模式</span><b>${diff().name} ↻</b></div>
     <h2>🏙️ 城市指标</h2>
     <div class="row"><span>年度增速</span><b class="${gColor}">${S.gRate.toFixed(1)}%${gArrow}</b></div>
     ${sparkHTML("g",{min:-6,max:12})}
@@ -3199,17 +3205,19 @@ function grantStarterPack(){
     completeBuild({type:id},true);   // year 记为 1975（开局既有）；silent：不弹建成快讯
   }
 }
-/* 年龄段选择：默认标准模式，点选卡片即时切换难度 */
-document.querySelectorAll("#agePick .ageCard").forEach(card=>{
-  card.addEventListener("click",()=>{
-    document.querySelectorAll("#agePick .ageCard").forEach(c=>c.classList.remove("sel"));
-    card.classList.add("sel");
-    S.ageMode=card.dataset.age;
-    $("introBtn").textContent=`开 始 · ${diff().name}`;
-    beep(660,0.08,"sine",0.05);
-  });
-});
-$("introBtn").addEventListener("click",()=>{
+/* 年龄段选择（默认标准模式）：document 级事件委托 + mousedown/click 双通道。
+   不用逐卡绑定 —— 即使浏览器翻译插件/阅读扩展改写了 DOM、或惯性滚动吞掉 click，
+   委托监听与 mousedown 仍能命中；S.ageMode 幂等赋值，重复触发无副作用。 */
+function setAgeMode(mode){
+  if(!AGE_MODES[mode])mode="adult";
+  S.ageMode=mode;
+  document.querySelectorAll("#agePick .ageCard").forEach(c=>c.classList.toggle("sel",c.dataset.age===mode));
+  const btn=$("introBtn");
+  if(btn)btn.textContent=`开 始 · ${diff().name}`;
+  updatePanel();
+}
+function startGame(){
+  if(S.started)return;   // 二次启动保护
   if(!S.ageMode)S.ageMode="adult";
   $("intro").style.display="none";
   fit();sizeRO&&sizeRO.observe(stageEl);
@@ -3222,6 +3230,34 @@ $("introBtn").addEventListener("click",()=>{
   setTimeout(()=>showNews("🌊 1975年","近岸调查","本市近岸海域海草床广泛分布，儒艮栖息，渔业资源丰富。",7),1500);
   setTimeout(()=>showNews("🎁 新手礼包","前任市长交接","学校、医院、城市公园已建成（民生基础，零生态影响）；另拨 300 亿启动资金，当前预算 800 亿。规划下一项建设吧。",8),4300);
   setTimeout(()=>showNews("💡 市长上手指南","","点击【建设】花钱发展城市；右下角 1×/5×/10× 可调时间流速（默认 5×，约 1 分钟 = 1 年）；每年年初有经营简报，建成项目会播报实际效果。",9),7000);
+}
+let lastAgeCard=null,lastAgeTs=0;
+function pickAge(card){
+  const now=Date.now();
+  /* 仅对"同一张卡"做 mousedown+click 双触发去重；快速连点不同卡不受影响 */
+  if(card===lastAgeCard&&now-lastAgeTs<350)return;
+  lastAgeCard=card;lastAgeTs=now;
+  setAgeMode(card.dataset.age);
+  beep(660,0.08,"sine",0.05);
+}
+document.addEventListener("mousedown",e=>{
+  const card=e.target&&e.target.closest?e.target.closest("#agePick .ageCard"):null;
+  if(card)pickAge(card);
+});
+document.addEventListener("click",e=>{
+  if(!e.target||!e.target.closest)return;
+  const card=e.target.closest("#agePick .ageCard");
+  if(card){pickAge(card);return;}
+  if(e.target.closest("#introBtn")){startGame();return;}
+  /* 游戏内随时切难度：点击面板"难度模式"行循环切换四种模式 */
+  if(e.target.closest("#diffRow")){
+    const order=["kid","teen","youth","adult"];
+    const cur=order.indexOf(S.ageMode);
+    setAgeMode(order[(cur+1)%4]);
+    showNotify({quiet:true,autoClose:5,
+      src:"🎚️ 难度已切换",
+      body:`当前模式：${diff().name} —— ${diff().desc}。点击面板"难度模式"行可继续切换。`});
+  }
 });
 fit();updatePanel();setView("sea");sizeRO&&sizeRO.observe(stageEl);
 requestAnimationFrame(t=>{lastT=t;loop(t);});
