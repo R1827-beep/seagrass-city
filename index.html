@@ -858,11 +858,11 @@ function ecoTier(){
   return score>=72?4:score>=55?3:score>=35?2:score>=18?1:0;
 }
 const ECO_TIERS=[
-  {name:"生态崩溃",notify:"海水浑浊发暗，连耐污的泥鳅类也消失了，海草只剩枯茬。",fish:[]},
-  {name:"严重恶化",notify:"海水浑浊偏褐，只剩耐污的泥鳅类在挣扎求生。",fish:[5]},
-  {name:"亚健康",notify:"水体偏绿浑浊，常见鱼种减少，海草叶片发黄。",fish:[3,5]},
-  {name:"健康",notify:"水质明显改善——蓝倒吊与黄金蝶鱼回来了，海草重新舒展。",fish:[1,2,3]},
-  {name:"生机盎然",notify:"海水清澈透亮！小丑鱼、神仙鱼等热带鱼群回归，海草间有海星出没，光柱洒满海床。",fish:[0,1,2,3,4]},
+  {name:"生态崩溃",notify:"海水浑浊发暗，鱼群绝迹，水母泛滥成灾，海草只剩枯茬。",fish:[]},
+  {name:"严重恶化",notify:"海水浑浊偏褐，水母开始成群出现，只剩耐污的泥鳅类在挣扎求生。",fish:[5]},
+  {name:"亚健康",notify:"水体明显发绿浑浊，常见鱼种大幅减少，海草叶片发黄矮化。",fish:[3,5]},
+  {name:"健康",notify:"水质明显改善——蓝倒吊与黄金蝶鱼回来了，海草重新舒展变高。",fish:[1,2,3]},
+  {name:"生机盎然",notify:"海水清澈透亮！热带鱼群成群回归，海龟巡游，海星满床，光柱洒满海床。",fish:[0,1,2,3,4]},
 ];
 /* 鱼类物种库（分档解锁；耐污种任何水质都在） */
 const FISH_SPECIES=[
@@ -886,7 +886,8 @@ function checkEcoTier(silent){
   }
 }
 const fishes=[];
-function fishTarget(){return Math.round(34*(S.coverage/100)*(1-S.pollution/160));}
+/* 生物量与海草覆盖度严格成比例（固定比例）：鱼群 = 覆盖度×0.6（最多 60 条） */
+function fishTarget(){return Math.round(60*(S.coverage/100));}
 function updateFishes(dt){
   const tgt=fishTarget();
   if(fishes.length<tgt&&Math.random()<dt*2){
@@ -900,6 +901,42 @@ function updateFishes(dt){
   for(const f of fishes){
     f.x+=f.vx*dt;f.y+=Math.sin(performance.now()/700+f.ph)*0.0004;
     if(f.x<-40)f.x=W+30;if(f.x>W+40)f.x=-30;
+  }
+}
+/* 海龟：海草床健康（覆盖 ≥60%）时的标志性访客，缓慢巡游 */
+const turtle={active:false,x:-100,y:0.3,vx:18,dir:1,cool:4};
+function updateTurtle(dt,t){
+  if(!turtle.active){
+    turtle.cool-=dt;
+    if(S.coverage>=60&&turtle.cool<=0){
+      turtle.active=true;
+      turtle.dir=Math.random()>0.5?1:-1;
+      turtle.x=turtle.dir>0?-70:W+70;
+      turtle.vx=turtle.dir*(14+Math.random()*8);
+      turtle.y=0.22+Math.random()*0.3;
+    }
+  }else{
+    turtle.x+=turtle.vx*dt;
+    turtle.y+=Math.sin(t*0.5)*0.0002;
+    if((turtle.dir>0&&turtle.x>W+80)||(turtle.dir<0&&turtle.x<-80)){
+      turtle.active=false;turtle.cool=6+Math.random()*8;
+    }
+  }
+}
+/* 水母：污染爆发的标志物种（越脏越多，泛滥即警示） */
+const jellies=[];
+function jellyTarget(){return S.pollution<=28?0:Math.min(9,Math.round((S.pollution-28)/9));}
+function updateJellies(dt){
+  const tgt=jellyTarget();
+  if(jellies.length<tgt&&Math.random()<dt*1.5){
+    jellies.push({x:Math.random()*W,y:0.15+Math.random()*0.55,
+      vy:2+Math.random()*3,ph:Math.random()*6,size:7+Math.random()*7});
+  }
+  if(jellies.length>tgt&&Math.random()<dt)jellies.shift();
+  for(const j of jellies){
+    j.y-=j.vy*dt*0.06;
+    j.x+=Math.sin(performance.now()/900+j.ph)*0.25;
+    if(j.y<0.08)j.y=0.62;
   }
 }
 const dugong={active:false,x:-100,y:0.55,vx:30,dir:1,finalSwim:false};
@@ -1087,7 +1124,7 @@ function simulate(dy){
     S.lastReportYear=Math.floor(S.year);
     yearlyReport();
   }
-  updateFishes(dy);updateDugong(dy,S.year);updateSediment(dy);
+  updateFishes(dy);updateTurtle(dy,S.year);updateJellies(dy);updateDugong(dy,S.year);updateSediment(dy);
   checkEcoTier();   // 生态分档变化 → 视觉档位播报
 }
 function completeBuild(b,silent){
@@ -2693,11 +2730,13 @@ function renderSea(t){
   if(w<=0||h<=0)return;
   const p=S.pollution/100,cov=S.coverage/100;
   const tier=ecoTier();
-  // 水体：清澈蓝绿 → 富营养化绿 → 污染褐（连续）+ 生态档位整色调校
+  // 水体：清澈蓝绿 → 富营养化绿 → 污染褐（连续）+ 生态档位整色调校（强对比）
   let top=[86,196,190],bot=[10,80,95];
-  if(tier>=4){top=mixColor(top,[118,228,218],0.4);bot=mixColor(bot,[16,110,120],0.4);}
-  else if(tier===3){top=mixColor(top,[96,208,196],0.22);bot=mixColor(bot,[14,92,104],0.22);}
-  else if(tier<=1){top=mixColor(top,[110,120,110],0.25);bot=mixColor(bot,[55,62,52],0.3);}
+  if(tier>=4){top=mixColor(top,[128,235,224],0.55);bot=mixColor(bot,[18,120,132],0.5);}
+  else if(tier===3){top=mixColor(top,[100,212,198],0.32);bot=mixColor(bot,[16,98,110],0.3);}
+  else if(tier===2){top=mixColor(top,[140,196,110],0.3);bot=mixColor(bot,[62,96,60],0.35);}
+  else if(tier===1){top=mixColor(top,[150,140,92],0.45);bot=mixColor(bot,[84,74,50],0.5);}
+  else{top=mixColor(top,[120,105,70],0.6);bot=mixColor(bot,[70,60,40],0.65);}
   if(p>0.25)top=mixColor(top,[150,190,90],(p-0.25)*1.2);
   if(p>0.25)bot=mixColor(bot,[60,95,55],(p-0.25)*1.2);
   if(p>0.6){top=mixColor(top,[140,110,50],(p-0.6)*2.2);bot=mixColor(bot,[85,65,30],(p-0.6)*2.2);}
@@ -2706,6 +2745,14 @@ function renderSea(t){
   g.addColorStop(0.35,rgb(top));
   g.addColorStop(1,rgb(bot));
   sx.fillStyle=g;sx.fillRect(0,0,w,h);
+  // 浑浊纱罩：低档位整屏叠加不透明雾层，水体"能见度"骤降（与清澈档拉开差距）
+  if(tier<=1){
+    sx.fillStyle=`rgba(96,102,72,${tier===1?0.16:0.28})`;
+    sx.fillRect(0,0,w,h);
+  }else if(tier===2){
+    sx.fillStyle="rgba(120,150,80,.09)";
+    sx.fillRect(0,0,w,h);
+  }
   // 水面波光：表层粼粼反光（越浑浊越弱）
   const surfA=clamp(0.32-p*0.28,0.03,0.32);
   for(let i=0;i<7;i++){
@@ -2763,9 +2810,9 @@ function renderSea(t){
       sx.lineWidth=1.2;
       sx.beginPath();sx.ellipse(cx2,cy2,10+rC()*14,2.5+rC()*2,0,0,7);sx.stroke();
     }
-    // 海星出没（生机盎然 3 只 / 健康 2 只）
+    // 海星出没：数量与海草覆盖度成固定比例（≥40% 出现，覆盖度越高越多，最多 4 只）
     const rS2=mulberry32(2024);
-    const nStar=tier>=4?3:2;
+    const nStar=S.coverage>=40?clamp(Math.round((S.coverage-30)/18),1,4):0;
     for(let i=0;i<nStar;i++){
       const sxp=rS2()*w*0.78,syp=bedY+8+rS2()*(h-bedY-18),sr=4+rS2()*3;
       sx.save();sx.translate(sxp,syp);sx.rotate(rS2()*7);
@@ -2812,17 +2859,20 @@ function renderSea(t){
   const stress=clamp((1-cov)*0.7+p*0.6,0,1);
   const healthy=[38,150,72],sick=[150,150,60],dead=[100,80,48];
   let bladeCol=stress<0.5?mixColor(healthy,sick,stress*2):mixColor(sick,dead,(stress-0.5)*2);
-  // 生态档位调校：生机盎然时鲜亮翠绿，恶化时灰暗失色
-  if(tier>=4)bladeCol=mixColor(bladeCol,[70,200,110],0.35);
-  else if(tier===3)bladeCol=mixColor(bladeCol,[90,180,110],0.18);
-  else if(tier<=1)bladeCol=mixColor(bladeCol,[110,100,75],0.3);
-  const hScale=0.55+0.45*cov;
+  // 生态档位调校（强对比）：生机盎然鲜亮翠绿 → 健康翠绿 → 亚健康枯黄 → 恶化灰褐
+  if(tier>=4)bladeCol=mixColor(bladeCol,[62,212,108],0.5);
+  else if(tier===3)bladeCol=mixColor(bladeCol,[88,186,108],0.3);
+  else if(tier===2)bladeCol=mixColor(bladeCol,[160,158,64],0.35);
+  else bladeCol=mixColor(bladeCol,[108,96,68],0.45);
+  // 高度差更悬殊：覆盖度 100% 时是 30% 时的 2.4 倍高，枯萎感一目了然
+  const hScale=0.32+0.68*cov;
+  const swayAmp=0.45+0.55*cov; // 健康海草随波摇曳，枯萎海草僵硬
   for(const b of BLADES){
     const bx=b.x*w;
     if(bx>shoreX-6)continue; // 被围填海掩埋
     if(b.thr>cov+0.14)continue; // 已死亡区域
     const alive=b.thr<=cov;
-    const bx0=b.x*w,sway=Math.sin(t*1.4+b.phase)*10*b.bend;
+    const bx0=b.x*w,sway=Math.sin(t*1.4+b.phase)*10*b.bend*swayAmp;
     if(!alive){
       // 枯死残留：短、斜、褐
       sx.strokeStyle="rgba(120,96,58,.8)";
@@ -2930,6 +2980,58 @@ function renderSea(t){
     // 眼睛
     sx.fillStyle="rgba(20,24,28,.9)";
     sx.beginPath();sx.arc(fx+dir*fs*0.55,fy-fs*0.1,Math.max(1,fs*0.09),0,7);sx.fill();
+  }
+  // 海龟（覆盖度 ≥60% 的健康标志）：壳纹 + 划水 + 缓慢巡游
+  if(turtle.active){
+    const tx=turtle.x,ty=turtle.y*h,dir=turtle.vx>0?1:-1;
+    const paddle=Math.sin(t*3.2)*5;
+    sx.save();sx.translate(tx,ty);sx.scale(dir,1);
+    sx.fillStyle="rgba(0,10,14,.15)";
+    sx.beginPath();sx.ellipse(0,16,22,5,0,0,7);sx.fill();
+    // 前鳍（上下划动）
+    sx.fillStyle="#5e8f6e";
+    sx.beginPath();sx.ellipse(-4,-6+ -paddle*0.6,10,4,-0.5,0,7);sx.fill();
+    sx.beginPath();sx.ellipse(6,-2+paddle*0.6,9,3.6,0.4,0,7);sx.fill();
+    // 后鳍
+    sx.beginPath();sx.ellipse(-18,4,6,3,0.3,0,7);sx.fill();
+    // 头
+    sx.fillStyle="#6da37d";
+    sx.beginPath();sx.ellipse(21,-2,7,5,0.15,0,7);sx.fill();
+    sx.fillStyle="rgba(20,24,28,.9)";
+    sx.beginPath();sx.arc(25,-3.5,1.2,0,7);sx.fill();
+    // 壳（圆顶 + 盾片纹路）
+    const sg=sx.createLinearGradient(0,-14,0,10);
+    sg.addColorStop(0,"#8fb37f");sg.addColorStop(0.6,"#678a5e");sg.addColorStop(1,"#4d6b49");
+    sx.fillStyle=sg;
+    sx.beginPath();sx.ellipse(0,0,20,12,-0.06,0,7);sx.fill();
+    sx.strokeStyle="rgba(40,60,38,.5)";sx.lineWidth=1;
+    sx.beginPath();sx.ellipse(0,-1,13,8,-0.06,0,7);sx.stroke();
+    for(let k=0;k<3;k++){
+      const ox=(k-1)*8;
+      sx.beginPath();sx.ellipse(ox,0,3.4,4.6,-0.06,0,7);sx.stroke();
+    }
+    sx.restore();
+  }
+  // 水母（污染爆发的标志物种，越脏越多）：半透明伞体脉动 + 飘带触手
+  for(const j of jellies){
+    const jx=j.x,jy=j.y*h,pul=1+Math.sin(t*3+j.ph)*0.14,js=j.size*pul;
+    sx.save();sx.translate(jx,jy);
+    // 触手（4 条飘带）
+    sx.strokeStyle="rgba(226,196,230,.4)";sx.lineWidth=1.2;
+    for(let k=0;k<4;k++){
+      const off=(k-1.5)*js*0.3;
+      sx.beginPath();
+      sx.moveTo(off,js*0.28);
+      sx.quadraticCurveTo(off+Math.sin(t*2+k+j.ph)*5,js*0.9,off+Math.sin(t*1.4+k*2+j.ph)*8,js*1.7);
+      sx.stroke();
+    }
+    // 伞体：径向渐变半透明
+    const jg=sx.createRadialGradient(0,-js*0.1,1,0,-js*0.1,js*0.7);
+    jg.addColorStop(0,"rgba(244,226,246,.62)");
+    jg.addColorStop(1,"rgba(206,168,214,.3)");
+    sx.fillStyle=jg;
+    sx.beginPath();sx.arc(0,0,js*0.62,Math.PI,0);sx.quadraticCurveTo(js*0.3,js*0.32,0,js*0.3);sx.quadraticCurveTo(-js*0.3,js*0.32,-js*0.62,0);sx.closePath();sx.fill();
+    sx.restore();
   }
   // 儒艮（渐变身体 + 浅色肚皮 + 鳍肢 + 气泡）
   if(dugong.active){
